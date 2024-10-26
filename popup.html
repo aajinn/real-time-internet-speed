@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Internet Speed Monitor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 200px;
+        height: 160px; /* Increased height for footer */
+        background-color: #f0f4f8;
+        color: #333;
+        position: relative;
+      }
+      h1 {
+        font-size: 1rem;
+        color: #555;
+        margin-bottom: 10px;
+      }
+      #speed {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #0073e6;
+        opacity: 0; /* Start hidden for animation */
+        transform: translateY(
+          -20px
+        ); /* Start position for the jump-in effect */
+        transition: opacity 0.3s ease, transform 0.3s ease; /* Transition effects */
+      }
+      #unit {
+        font-size: 1rem;
+        color: #555;
+        opacity: 0; /* Start hidden for animation */
+        transform: translateY(
+          -20px
+        ); /* Start position for the jump-in effect */
+        transition: opacity 0.3s ease, transform 0.3s ease; /* Transition effects */
+      }
+      #footer {
+        margin-top: 10px;
+        font-size: 0.8rem;
+        color: #555;
+      }
+      #footer a {
+        color: #0073e6;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Internet Speed</h1>
+    <div id="speed">--</div>
+    <div id="unit">Mbps</div>
+    <div id="footer">
+      Made by <a href="https://ared.dev" target="_blank">Ared</a>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

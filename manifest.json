@@ -1,0 +1,14 @@
+{
+        "manifest_version": 3,
+        "name": "Real-Time Internet Speed Monitor",
+        "description": "Displays real-time internet speed.",
+        "version": "1.0",
+        "permissions": ["activeTab", "background"],
+        "background": {
+          "service_worker": "background.js"
+        },
+        "action": {
+          "default_popup": "popup.html"
+        }
+      }
+      
