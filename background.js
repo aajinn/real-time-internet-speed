@@ -17,6 +17,7 @@ async function getInternetSpeed() {
   } catch (error) {
     console.error("Error fetching image for speed test:", error);
     latestSpeed = "Err"; // Display "Err" on error
+    chrome.action.setBadgeText({ text: "no internet" });
   }
 }
 
