@@ -16,48 +16,109 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        width: 200px;
-        height: 160px; /* Increased height for footer */
-        background-color: #f0f4f8;
+        width: 260px;
+        height: 240px;
+        background-color: #e0e7ef;
         color: #333;
         position: relative;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
       h1 {
         font-size: 1rem;
-        color: #555;
+        color: #444;
         margin-bottom: 10px;
+        font-weight: 600;
+        z-index: 1;
       }
       #speed {
-        font-size: 2.5rem;
+        font-size: 2.8rem;
         font-weight: bold;
-        color: #0073e6;
-        opacity: 0; /* Start hidden for animation */
-        transform: translateY(
-          -20px
-        ); /* Start position for the jump-in effect */
-        transition: opacity 0.3s ease, transform 0.3s ease; /* Transition effects */
+        color: #0058cc;
+        opacity: 0;
+        transform: translateY(-20px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        animation: pulse 0.6s ease-in-out;
+        z-index: 1;
       }
       #unit {
         font-size: 1rem;
-        color: #555;
-        opacity: 0; /* Start hidden for animation */
-        transform: translateY(
-          -20px
-        ); /* Start position for the jump-in effect */
-        transition: opacity 0.3s ease, transform 0.3s ease; /* Transition effects */
+        color: #444;
+        opacity: 0;
+        transform: translateY(-20px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        z-index: 1;
       }
       #footer {
-        margin-top: 10px;
+        margin-top: 12px;
         font-size: 0.8rem;
-        color: #555;
+        color: #333;
+        z-index: 1;
+        background: rgba(255, 255, 255, 0.85);
+        padding: 5px 10px;
+        border-radius: 5px;
       }
       #footer a {
-        color: #0073e6;
+        color: #0058cc;
         text-decoration: none;
+        transition: color 0.3s;
+      }
+      #footer a:hover {
+        color: #004099;
+      }
+
+      /* Pulse Animation */
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      /* Background Graph Animation */
+      .bg-animation {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 300%;
+        height: 100%;
+        background: repeating-linear-gradient(
+            0deg,
+            rgba(0, 88, 204, 0.3) 0,
+            rgba(0, 88, 204, 0.3) 5px,
+            transparent 5px,
+            transparent 80px
+          ),
+          repeating-linear-gradient(
+            90deg,
+            rgba(0, 88, 204, 0.3) 0,
+            rgba(0, 88, 204, 0.3) 5px,
+            transparent 5px,
+            transparent 80px
+          );
+        opacity: 0.6;
+        animation: moveGraph 4s linear infinite;
+        z-index: 0;
+      }
+
+      @keyframes moveGraph {
+        0% {
+          transform: translateX(0) translateY(0);
+        }
+        100% {
+          transform: translateX(-80px) translateY(-80px);
+        }
       }
     </style>
   </head>
   <body>
+    <div class="bg-animation"></div>
     <h1>Internet Speed</h1>
     <div id="speed">--</div>
     <div id="unit">Mbps</div>
@@ -66,5 +127,27 @@
     </div>
 
     <script src="popup.js"></script>
+    <script>
+      // Simulate updating speed for demo purposes
+      function updateSpeedDisplay(speed) {
+        const speedElement = document.getElementById("speed");
+        const unitElement = document.getElementById("unit");
+
+        speedElement.textContent = speed;
+
+        // Reset animations by re-triggering transition
+        speedElement.style.opacity = 1;
+        speedElement.style.transform = "translateY(0)";
+        speedElement.style.animation = "pulse 0.6s ease-in-out";
+
+        unitElement.style.opacity = 1;
+        unitElement.style.transform = "translateY(0)";
+      }
+
+      // Example usage with mock speed for demo
+      setTimeout(() => {
+        updateSpeedDisplay(45.2);
+      }, 1000);
+    </script>
   </body>
 </html>
