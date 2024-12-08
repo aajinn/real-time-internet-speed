@@ -33,12 +33,14 @@ function updateSpeed() {
             // Display in Mbps if speed is 1 or above, otherwise Kbps
             if (speed >= 1) {
                 speedElement.innerText =
+                    '*' +
                     speed.toFixed(1);
                 unitElement.innerText =
                     'Mbps';
             } else {
                 speed *= 1000; // Convert to Kbps
                 speedElement.innerText =
+                    '*' +
                     speed.toFixed(0);
                 unitElement.innerText =
                     'Kbps';
@@ -58,7 +60,7 @@ function updateSpeed() {
 }
 
 // Request speed every second
-setInterval(updateSpeed, 1000);
+setInterval(updateSpeed, 500);
 
 // Initial request on popup load
 updateSpeed();
