@@ -1,223 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0" />
-        <title
-            >Internet Speed
-            Monitor</title
-        >
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            body {
-                font-family: Arial,
-                    sans-serif;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                width: 180px;
-                height: 240px;
-                background-color: #e0e7ef;
-                color: #333;
-                position: relative;
-                overflow: hidden;
-                border-radius: 10px;
-                box-shadow: 0 4px 12px
-                    rgba(0, 0, 0, 0.15);
-            }
-            h1 {
-                font-size: 1rem;
-                color: #444;
-                margin-bottom: 10px;
-                font-weight: 600;
-                z-index: 1;
-            }
-            #speed {
-                font-size: 3.5rem;
-                font-weight: bold;
-                color: #0058cc;
-                opacity: 0;
-                transform: translateY(
-                    -20px
-                );
-                transition: opacity 0.5s
-                        ease,
-                    transform 0.5s ease;
-                animation: pulse 0.6s
-                    ease-in-out;
-                z-index: 1;
-                font-family: 'Trebuchet MS',
-                    'Lucida Sans Unicode',
-                    'Lucida Grande',
-                    'Lucida Sans', Arial,
-                    sans-serif;
-            }
-            #unit {
-                font-size: 1rem;
-                color: #444;
-                opacity: 0;
-                transform: translateY(
-                    -20px
-                );
-                transition: opacity 0.5s
-                        ease,
-                    transform 0.5s ease;
-                z-index: 1;
-            }
-            #footer {
-                margin-top: 12px;
-                font-size: 0.8rem;
-                color: #333;
-                z-index: 1;
-                background: rgba(
-                    255,
-                    255,
-                    255,
-                    0.412
-                );
-                padding: 5px 10px;
-                border-radius: 5px;
-                width: 100%;
-                text-align: center;
-                position: absolute;
-                bottom: 0;
-            }
-            #footer a {
-                color: #0058cc;
-                text-decoration: none;
-                transition: color 0.3s;
-            }
-            #footer a:hover {
-                color: #004099;
-            }
+  <head>
+    <meta
+      charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0" />
+    <title
+      >Internet
+      Speed
+      Monitor</title
+    >
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arial,
+          sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 180px;
+        height: 240px;
+        background-color: #e0e7ef;
+        color: #333;
+        position: relative;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: 0
+          4px 12px
+          rgba(
+            0,
+            0,
+            0,
+            0.15
+          );
+      }
+      h1 {
+        font-size: 1rem;
+        color: #444;
+        margin-bottom: 10px;
+        font-weight: 600;
+        z-index: 1;
+      }
+      #speed {
+        font-size: 3.5rem;
+        font-weight: bold;
+        color: #0058cc;
+        opacity: 0;
+        transform: translateY(
+          -20px
+        );
+        transition: opacity
+            0.5s
+            ease,
+          transform
+            0.5s
+            ease;
+        animation: pulse
+          0.6s
+          ease-in-out;
+        z-index: 1;
+        font-family: 'Trebuchet MS',
+          'Lucida Sans Unicode',
+          'Lucida Grande',
+          'Lucida Sans',
+          Arial,
+          sans-serif;
+      }
+      #unit {
+        font-size: 1rem;
+        color: #444;
+        opacity: 0;
+        transform: translateY(
+          -20px
+        );
+        transition: opacity
+            0.5s
+            ease,
+          transform
+            0.5s
+            ease;
+        z-index: 1;
+      }
+      #footer {
+        margin-top: 12px;
+        font-size: 0.8rem;
+        color: #333;
+        z-index: 1;
+        background: rgba(
+          255,
+          255,
+          255,
+          0.412
+        );
+        padding: 5px
+          10px;
+        border-radius: 5px;
+        width: 100%;
+        text-align: center;
+        position: absolute;
+        bottom: 0;
+      }
+      #footer a {
+        color: #0058cc;
+        text-decoration: none;
+        transition: color
+          0.3s;
+      }
+      #footer
+        a:hover {
+        color: #004099;
+      }
 
-            /* Pulse Animation */
-            @keyframes pulse {
-                0% {
-                    transform: scale(1);
-                }
-                50% {
-                    transform: scale(
-                        1.1
-                    );
-                }
-                100% {
-                    transform: scale(1);
-                }
-            }
+      .loading-text {
+        font-size: 10px !important;
+        color: grey !important;
+        transition: all
+          500ms;
+      }
 
-            /* Background Graph Animation */
-            .bg-animation {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 300%;
-                height: 100%;
-                background: repeating-linear-gradient(
-                        0deg,
-                        rgba(
-                                0,
-                                88,
-                                204,
-                                0.3
-                            )
-                            0,
-                        rgba(
-                                0,
-                                88,
-                                204,
-                                0.3
-                            )
-                            5px,
-                        transparent 5px,
-                        transparent 80px
-                    ),
-                    repeating-linear-gradient(
-                        90deg,
-                        rgba(
-                                0,
-                                88,
-                                204,
-                                0.3
-                            )
-                            0,
-                        rgba(
-                                0,
-                                88,
-                                204,
-                                0.3
-                            )
-                            5px,
-                        transparent 5px,
-                        transparent 80px
-                    );
-                opacity: 0.6;
-                animation: moveGraph 4s
-                    linear infinite;
-                z-index: 0;
-            }
+      /* Pulse Animation */
+      @keyframes pulse {
+        0% {
+          transform: scale(
+            1
+          );
+        }
+        50% {
+          transform: scale(
+            1.1
+          );
+        }
+        100% {
+          transform: scale(
+            1
+          );
+        }
+      }
 
-            @keyframes moveGraph {
-                0% {
-                    transform: translateX(
-                            0
-                        )
-                        translateY(0);
-                }
-                100% {
-                    transform: translateX(
-                            -80px
-                        )
-                        translateY(
-                            -80px
-                        );
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="bg-animation"></div>
-        <h1
-            style="
-                color: red;
-                font-family: Verdana,
-                    Geneva, Tahoma,
-                    sans-serif;
-                opacity: 70%;
-            "
-            >-Real🤝Time-</h1
-        >
-        <h1
-            style="
-                color: rgb(14, 65, 206);
-                opacity: 70%;
-            "
-            >-🚀-</h1
-        >
-        <div id="speed">--</div>
-        <div id="unit">Mbps</div>
-        <div id="footer">
-            <a
-                target="_blank"
-                href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews"
-                >Rate Us ⭐</a
-            >
+      /* Background Graph Animation */
+      .bg-animation {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 300%;
+        height: 100%;
+        background: repeating-linear-gradient(
+            0deg,
+            rgba(
+                0,
+                88,
+                204,
+                0.3
+              )
+              0,
+            rgba(
+                0,
+                88,
+                204,
+                0.3
+              )
+              5px,
+            transparent
+              5px,
+            transparent
+              80px
+          ),
+          repeating-linear-gradient(
+            90deg,
+            rgba(
+                0,
+                88,
+                204,
+                0.3
+              )
+              0,
+            rgba(
+                0,
+                88,
+                204,
+                0.3
+              )
+              5px,
+            transparent
+              5px,
+            transparent
+              80px
+          );
+        opacity: 0.6;
+        animation: moveGraph
+          4s linear
+          infinite;
+        z-index: 0;
+      }
 
-            Made by
-            <a
-                target="_blank"
-                href="https://ared.dev"
-                >Ared</a
-            >
-        </div>
+      @keyframes moveGraph {
+        0% {
+          transform: translateX(
+              0
+            )
+            translateY(
+              0
+            );
+        }
+        100% {
+          transform: translateX(
+              -80px
+            )
+            translateY(
+              -80px
+            );
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="bg-animation"></div>
+    <h1
+      style="
+        color: red;
+        font-family: Verdana,
+          Geneva,
+          Tahoma,
+          sans-serif;
+        opacity: 70%;
+      "
+      >-Real🤝Time-</h1
+    >
+    <h1
+      style="
+        color: rgb(
+          14,
+          65,
+          206
+        );
+        opacity: 70%;
+      "
+      >-🚀-</h1
+    >
+    <div id="speed"
+      >Loading...</div
+    >
+    <div id="unit"
+      >Mbps</div
+    >
+    <div
+      id="footer">
+      <a
+        target="_blank"
+        href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews"
+        >Rate Us
+        ⭐</a
+      >
 
-        <script src="popup.js"></script>
-    </body>
+      Made by
+      <a
+        target="_blank"
+        href="https://ared.dev"
+        >Ared</a
+      >
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
 </html>
