@@ -12,6 +12,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            
         }
 
         #main {
@@ -23,7 +24,7 @@
             justify-content: center;
             width: 180px;
             height: 240px;
-            background-color: #e0e7ef4c;
+            background-color: rgba(255, 255, 255, 0);
             color: #333;
             position: relative;
             overflow: hidden;
@@ -171,6 +172,8 @@
             opacity: 0.6;
             animation: moveGraph 4s linear infinite;
             z-index: 0;
+            filter: blur(3px);
+            transition: filter 0.3s ease-in-out;
         }
 
         @keyframes moveGraph {
