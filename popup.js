@@ -15,7 +15,7 @@ function updateSpeed() {
     if (speed >= 1) {
       speedElement.classList.remove('loading-text');
       speedElement.innerText = `*${speed.toFixed(1)}`;
-      unitElement.innerText = 'Mbps';
+      unitElement.innerText = '-Mbps-';
     } else if (speed === 0) {
       unitElement.innerText = '';
       speedElement.innerText = 'Loading...';
@@ -23,7 +23,7 @@ function updateSpeed() {
     } else {
       speedElement.classList.remove('loading-text');
       speedElement.innerText = `*${(speed * 1000).toFixed(0)}`; // Convert to Kbps
-      unitElement.innerText = 'Kbps';
+      unitElement.innerText = '-kbps-';
     }
 
     // Trigger animation
