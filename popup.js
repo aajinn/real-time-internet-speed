@@ -23,7 +23,7 @@ function updateSpeed() {
       unitElement.innerText = '-Mbps-';
     } else if (speed === 0) {
       unitElement.innerText = '';
-      speedElement.innerText = 'Loading...';
+      speedElement.innerText = 'Connecting...';
       speedElement.classList.add('loading-text');
     } else {
       speedElement.classList.remove('loading-text');
