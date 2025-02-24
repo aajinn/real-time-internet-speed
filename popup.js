@@ -1,3 +1,8 @@
+const modeBtn = document.getElementById('modeBtn');
+const updateBtn = document.getElementById('updateBtn');
+let isRealTime = true; // Default mode
+
+
 function updateSpeed() {
   chrome.runtime.sendMessage({ type: 'getSpeed' }, (response) => {
     const speedElement = document.getElementById('speed');
@@ -25,31 +30,13 @@ function updateSpeed() {
       speedElement.innerText = `*${(speed * 1000).toFixed(0)}`; // Convert to Kbps
       unitElement.innerText = '-kbps-';
     }
-
-    // Trigger animation
-    [speedElement, unitElement].forEach((el) => {
-      el.style.opacity = '1';
-      el.style.transform = 'translateY(0)';
-    });
   });
 }
+// Real-Time Mode: Update speed every 5 seconds
+let intervalId = setInterval(updateSpeed, 5000);
+updateSpeed(); // Initial update
 
-// Update speed periodically
-setInterval(updateSpeed, 500);
-updateSpeed(); // Initial request
 
-// Add jump-in effect on click
-document.body.addEventListener('click', () => {
-  const speedElement = document.getElementById('speed');
-  const unitElement = document.getElementById('unit');
-
-  [speedElement, unitElement].forEach((el) => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(-20px)';
-  });
-
-  setTimeout(updateSpeed, 300); // Wait for animation to finish
-});
 
 // Simulate updating speed for demo purposes
 function updateSpeedDisplay(speed) {
@@ -97,3 +84,20 @@ document.getElementById('disable-rating-btn').addEventListener('click', () => {
   document.getElementById('ratingDiv').style.display = 'none';
   document.getElementById('main').style.display = 'flex';
 });
+
+
+// Toggle between Real-Time and Manual Mode
+modeBtn.addEventListener('click', () => {
+  isRealTime = !isRealTime;
+
+  if (isRealTime) {
+    // Enable Real-Time Mode
+    modeBtn.innerText = '🤝';
+    intervalId = setInterval(updateSpeed, 5000); // Start periodic updates
+  } else {
+    // Enable Manual Mode
+    modeBtn.innerText = '👐';
+    clearInterval(intervalId); // Stop periodic updates
+  }
+});
+
