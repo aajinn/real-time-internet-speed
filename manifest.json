@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Real-Time Internet Speed Monitor",
   "description": "Advanced real-time internet speed monitoring with adaptive testing, speed history, and accurate measurements.",
-  "version": "1.7.0",
+  "version": "2.0",
   "permissions": [
     "activeTab",
     "background"
@@ -12,6 +12,11 @@
     "https://www.google.com/*",
     "https://upload.wikimedia.org/*"
   ],
+  "host_permissions_justification": {
+    "https://httpbin.org/*": "Primary speed testing service - provides reliable test files of known sizes (100KB to 2MB) for accurate bandwidth measurement. This service is specifically designed for HTTP testing and provides consistent, unthrottled downloads essential for precise speed calculations.",
+    "https://www.google.com/*": "Fallback speed testing source - used when primary testing service is unavailable. Accesses Google's logo image (13KB) as a reliable backup for basic connectivity and speed testing to ensure the extension continues working even if the primary service fails.",
+    "https://upload.wikimedia.org/*": "Secondary fallback testing source - provides an additional reliable image file (15KB) for speed measurement redundancy. Used as a final backup option to ensure consistent service availability and accurate speed measurements across different network conditions."
+  },
   "background": {
     "service_worker": "background.js"
   },
