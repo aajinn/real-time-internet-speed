@@ -18,8 +18,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 200px;
-            height: 280px;
+            width: 240px;
+            height: 320px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #fff;
             position: relative;
@@ -34,8 +34,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 200px;
-            height: 280px;
+            width: 240px;
+            height: 320px;
             background: #f5f7fa;
             color: #333;
             position: relative;
@@ -45,42 +45,97 @@
         }
 
         h1 {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 500;
             z-index: 1;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         #speed {
-            font-size: 3.2rem;
+            font-size: 3.5rem;
             font-weight: 700;
             color: #fff;
             opacity: 0;
             transform: translateY(-20px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
+            transition: opacity 0.5s ease, transform 0.5s ease, color 0.3s ease;
             animation: pulse 0.6s ease-in-out;
             z-index: 1;
             font-family: 'Segoe UI', system-ui, sans-serif;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            margin-bottom: 5px;
+            margin-bottom: 2px;
+            line-height: 1;
         }
 
         #unit {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
             opacity: 0;
             transform: translateY(-20px);
             transition: opacity 0.5s ease, transform 0.5s ease;
             z-index: 1;
             font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        #category {
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 1;
+            margin-bottom: 6px;
+            padding: 4px 12px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+
+        #description {
+            font-size: 0.75rem;
+            text-align: center;
+            z-index: 1;
+            margin-bottom: 8px;
+            padding: 0 15px;
+            line-height: 1.3;
+            opacity: 0.9;
+        }
+
+        .description-normal { color: rgba(255, 255, 255, 0.9); }
+        .description-testing { color: #ffd700; font-weight: 500; }
+        .description-error { color: #ff6b6b; font-weight: 500; }
+
+        #speedIndicator {
+            width: 85%;
             margin-bottom: 10px;
+            z-index: 1;
+        }
+
+        .gauge-track {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.8s ease;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+
+        .gauge-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         #status {
-            font-size: 0.75rem;
-            opacity: 0.7;
+            font-size: 0.7rem;
+            opacity: 0.8;
             z-index: 1;
             margin-bottom: 8px;
             text-align: center;
@@ -94,7 +149,7 @@
             background: rgba(255, 255, 255, 0.2);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 6px 12px;
+            padding: 8px 16px;
             border-radius: 20px;
             font-size: 0.8rem;
             cursor: pointer;
@@ -102,6 +157,9 @@
             z-index: 1;
             margin-bottom: 8px;
             backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         #testButton:hover {
@@ -116,9 +174,23 @@
             transform: none;
         }
 
+        .spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         #speedGraphContainer {
             width: 80%;
-            height: 30px;
+            height: 25px;
             margin-bottom: 8px;
             z-index: 1;
         }
@@ -127,20 +199,25 @@
             display: flex;
             align-items: end;
             height: 100%;
-            gap: 2px;
+            gap: 3px;
             justify-content: center;
         }
 
         .graph-bar {
             background: rgba(255, 255, 255, 0.6);
-            width: 8px;
+            width: 12px;
             min-height: 4px;
-            border-radius: 1px;
-            transition: height 0.5s ease;
+            border-radius: 2px;
+            transition: height 0.5s ease, background-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .graph-bar:hover {
+            opacity: 0.8;
         }
 
         #footer {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: rgba(255, 255, 255, 0.8);
             z-index: 1;
             background: rgba(0, 0, 0, 0.1);
@@ -166,7 +243,7 @@
         }
 
         .loading-text {
-            font-size: 1.2rem !important;
+            font-size: 1.8rem !important;
             color: rgba(255, 255, 255, 0.8) !important;
             transition: all 500ms;
             animation: blink 1.5s infinite;
@@ -174,16 +251,16 @@
 
         .error-text {
             color: #ff6b6b !important;
-            font-size: 1.5rem !important;
+            font-size: 2rem !important;
         }
 
         .error-unit {
             color: #ff6b6b !important;
-            font-size: 0.8rem !important;
+            font-size: 0.9rem !important;
         }
 
         .handshake:hover {
-            font-size: 1.2rem;
+            font-size: 1rem;
             transition: all 300ms ease-in-out;
         }
 
@@ -223,13 +300,13 @@
         }
 
         /* Responsive adjustments */
-        @media (max-width: 220px) {
+        @media (max-width: 260px) {
             #main, body {
-                width: 180px;
-                height: 260px;
+                width: 220px;
+                height: 300px;
             }
             #speed {
-                font-size: 2.8rem;
+                font-size: 3rem;
             }
         }
     </style>
@@ -312,17 +389,21 @@
     <div id="main">
         <div class="bg-animation"></div>
         <h1>
-            <span style="color: #ffd700;">Real</span><span class="handshake">🤝</span><span style="color: #ffd700;">Time</span>
+            <span style="color: #ffd700;">Internet</span> <span class="handshake">📶</span> <span style="color: #ffd700;">Speed</span>
         </h1>
-        <h1 style="color: #ffd700; margin-bottom: 15px;">🚀 Speed Monitor</h1>
         
-        <div id="status">Initializing...</div>
         <div id="speed">Loading...</div>
         <div id="unit">Mbps</div>
         
+        <div id="category">🚀 Excellent</div>
+        <div id="description">Checking your connection speed...</div>
+        
+        <div id="speedIndicator"></div>
         <div id="speedGraphContainer"></div>
         
-        <button id="testButton">Test Now</button>
+        <button id="testButton">🔄 Test Now</button>
+        
+        <div id="status">Initializing...</div>
         
         <div id="footer">
             <a target="_blank" href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews">
