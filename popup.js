@@ -6,21 +6,21 @@ function formatSpeedForDisplay(speedString, rawSpeed) {
   if (speedString === '--' || speedString === 'Err') {
     return { display: speedString, unit: 'Mbps', isError: speedString === 'Err' };
   }
-  
+
   const speed = parseFloat(speedString) || 0;
-  
+
   if (speed >= 1) {
-    return { 
-      display: speed.toFixed(speed >= 10 ? 1 : 2), 
-      unit: 'Mbps', 
-      isError: false 
+    return {
+      display: speed.toFixed(speed >= 10 ? 1 : 2),
+      unit: 'Mbps',
+      isError: false
     };
   } else {
     const kbps = Math.round(speed * 1000);
-    return { 
-      display: kbps.toString(), 
-      unit: 'Kbps', 
-      isError: false 
+    return {
+      display: kbps.toString(),
+      unit: 'Kbps',
+      isError: false
     };
   }
 }
@@ -29,7 +29,7 @@ function updateSpeedDisplay(speedData) {
   const speedElement = document.getElementById('speed');
   const unitElement = document.getElementById('unit');
   const statusElement = document.getElementById('status');
-  
+
   if (!speedData || !speedData.speed) {
     console.error('Failed to retrieve speed data.');
     speedElement.innerText = '--';
@@ -41,27 +41,26 @@ function updateSpeedDisplay(speedData) {
   currentSpeed = speedData.speed;
   speedHistory = speedData.history || [];
   isTestingInProgress = speedData.isTestingInProgress || false;
-  
+
   const formatted = formatSpeedForDisplay(speedData.speed);
-  
+
   // Update main display
   speedElement.classList.remove('loading-text', 'error-text');
   unitElement.classList.remove('error-unit');
-  
+
   if (formatted.isError) {
     speedElement.classList.add('error-text');
     unitElement.classList.add('error-unit');
     speedElement.innerText = 'Error';
     unitElement.innerText = 'Connection Failed';
   } else if (isTestingInProgress) {
-    speedElement.classList.add('loading-text');
-    speedElement.innerText = 'Testing...';
-    unitElement.innerText = 'Please Wait';
+
+
   } else {
     speedElement.innerText = `*${formatted.display}`;
     unitElement.innerText = `-${formatted.unit}-`;
   }
-  
+
   // Update status
   if (statusElement) {
     if (isTestingInProgress) {
@@ -71,15 +70,15 @@ function updateSpeedDisplay(speedData) {
       statusElement.innerText = 'Connection Error';
       statusElement.className = 'status-error';
     } else {
-      const lastUpdate = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const lastUpdate = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       statusElement.innerText = `Updated: ${lastUpdate}`;
       statusElement.className = 'status-normal';
     }
   }
-  
+
   // Update speed history visualization
   updateSpeedGraph();
-  
+
   // Trigger animation
   [speedElement, unitElement].forEach((el) => {
     el.style.opacity = '1';
@@ -90,17 +89,17 @@ function updateSpeedDisplay(speedData) {
 function updateSpeedGraph() {
   const graphElement = document.getElementById('speedGraph');
   if (!graphElement || speedHistory.length === 0) return;
-  
+
   const maxSpeed = Math.max(...speedHistory);
   const minSpeed = Math.min(...speedHistory);
   const range = maxSpeed - minSpeed || 1;
-  
+
   // Create simple ASCII-like graph
   const bars = speedHistory.slice(-8).map(speed => {
     const percentage = ((speed - minSpeed) / range) * 100;
     return `<div class="graph-bar" style="height: ${Math.max(10, percentage)}%"></div>`;
   }).join('');
-  
+
   graphElement.innerHTML = bars;
 }
 
@@ -120,17 +119,17 @@ function forceSpeedTest() {
     testButton.disabled = true;
     testButton.innerText = 'Testing...';
   }
-  
+
   chrome.runtime.sendMessage({ type: 'forceTest' }, (response) => {
     if (chrome.runtime.lastError) {
       console.error('Runtime error:', chrome.runtime.lastError);
     }
-    
+
     if (testButton) {
       testButton.disabled = false;
       testButton.innerText = 'Test Now';
     }
-    
+
     // Update display after forced test
     setTimeout(updateSpeed, 1000);
   });
@@ -146,7 +145,7 @@ document.body.addEventListener('click', (e) => {
   if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') {
     return;
   }
-  
+
   const speedElement = document.getElementById('speed');
   const unitElement = document.getElementById('unit');
 
@@ -165,16 +164,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (testButton) {
     testButton.addEventListener('click', forceSpeedTest);
   }
-  
+
   // Add speed graph
   const graphContainer = document.getElementById('speedGraphContainer');
   if (graphContainer) {
     graphContainer.innerHTML = '<div id="speedGraph" class="speed-graph"></div>';
   }
-  
+
   // Handle rating system
   handleRatingSystem();
-  
+
   // Add keyboard shortcuts
   document.addEventListener('keydown', (e) => {
     if (e.key === 'r' || e.key === 'R') {

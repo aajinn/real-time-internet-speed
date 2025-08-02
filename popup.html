@@ -24,7 +24,7 @@
             color: #fff;
             position: relative;
             overflow: hidden;
-            border-radius: 12px;
+
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
 
@@ -86,9 +86,19 @@
             text-align: center;
         }
 
-        .status-normal { color: rgba(255, 255, 255, 0.8); }
-        .status-testing { color: #ffd700; font-weight: 500; }
-        .status-error { color: #ff6b6b; font-weight: 500; }
+        .status-normal {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .status-testing {
+            color: #ffd700;
+            font-weight: 500;
+        }
+
+        .status-error {
+            color: #ff6b6b;
+            font-weight: 500;
+        }
 
         #testButton {
             background: rgba(255, 255, 255, 0.2);
@@ -189,14 +199,30 @@
 
         /* Animations */
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.5; }
+
+            0%,
+            50% {
+                opacity: 1;
+            }
+
+            51%,
+            100% {
+                opacity: 0.5;
+            }
         }
 
         /* Background Effects */
@@ -206,7 +232,7 @@
             left: 0;
             width: 300%;
             height: 100%;
-            background: 
+            background:
                 radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
                 radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
@@ -216,18 +242,34 @@
         }
 
         @keyframes floatBackground {
-            0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
-            25% { transform: translateX(-20px) translateY(-10px) rotate(1deg); }
-            50% { transform: translateX(-10px) translateY(-20px) rotate(-1deg); }
-            75% { transform: translateX(-30px) translateY(-5px) rotate(0.5deg); }
+
+            0%,
+            100% {
+                transform: translateX(0) translateY(0) rotate(0deg);
+            }
+
+            25% {
+                transform: translateX(-20px) translateY(-10px) rotate(1deg);
+            }
+
+            50% {
+                transform: translateX(-10px) translateY(-20px) rotate(-1deg);
+            }
+
+            75% {
+                transform: translateX(-30px) translateY(-5px) rotate(0.5deg);
+            }
         }
 
         /* Responsive adjustments */
         @media (max-width: 220px) {
-            #main, body {
+
+            #main,
+            body {
                 width: 180px;
                 height: 260px;
             }
+
             #speed {
                 font-size: 2.8rem;
             }
@@ -311,39 +353,38 @@
 <body>
     <div id="main">
         <div class="bg-animation"></div>
-        <h1>
-            <span style="color: #ffd700;">Real</span><span class="handshake">🤝</span><span style="color: #ffd700;">Time</span>
-        </h1>
-        <h1 style="color: #ffd700; margin-bottom: 15px;">🚀 Speed Monitor</h1>
-        
-        <div id="status">Initializing...</div>
+
+        <h1 style="color: #ffd700; margin-bottom: 15px;font-size: 19px;">🚀 Speed Monitor</h1>
+
+
         <div id="speed">Loading...</div>
         <div id="unit">Mbps</div>
-        
+
         <div id="speedGraphContainer"></div>
-        
-        <button id="testButton">Test Now</button>
-        
+
+
+
         <div id="footer">
-            <a target="_blank" href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews">
+            <a target="_blank"
+                href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews">
                 Rate Us ⭐
             </a>
             <br>
             Made by <a target="_blank" href="https://ared.dev">Ared</a>
         </div>
     </div>
-    
+
     <div id="ratingDiv">
         <h3>🌟 Enjoying our extension?</h3>
         <p>Help us improve by rating us on the Chrome Web Store!</p>
-        <a href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews" 
-           target="_blank" rel="noopener noreferrer">
+        <a href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews"
+            target="_blank" rel="noopener noreferrer">
             ⭐ Rate Now
         </a>
         <button id="dismiss-btn">Maybe Later</button>
         <button id="disable-rating-btn">Don't Show Again</button>
     </div>
-    
+
     <script src="popup.js"></script>
 </body>
 
