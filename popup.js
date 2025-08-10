@@ -54,7 +54,7 @@ function updateSpeedDisplay(speedData) {
     speedElement.innerText = 'Error';
     unitElement.innerText = 'Connection Failed';
   } else if (isTestingInProgress) {
-
+speedElement.classList.add('loading-text');
 
   } else {
     speedElement.innerText = `*${formatted.display}`;
