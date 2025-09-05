@@ -176,11 +176,9 @@
         }
 
         .loading-text {
-        
-            color: rgba(255, 255, 255, 0.8) !important;
-            transition: all 1000ms;
-            animation: blink 1.5s infinite;
-            
+            color: #ffd700 !important;
+            animation: blinkPop 1.2s infinite ease-in-out !important;
+            transition: none !important;
         }
 
         .error-text {
@@ -214,15 +212,34 @@
         }
 
         @keyframes blink {
-
-            0%,
-            50% {
+            0%, 50% {
                 opacity: 1;
             }
-
-            51%,
-            100% {
+            51%, 100% {
                 opacity: 0.5;
+            }
+        }
+
+        @keyframes blinkPop {
+            0% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+            25% {
+                opacity: 0.7;
+                transform: scale(1.05) translateY(-3px);
+            }
+            50% {
+                opacity: 0.4;
+                transform: scale(1.1) translateY(-5px);
+            }
+            75% {
+                opacity: 0.7;
+                transform: scale(1.05) translateY(-3px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
             }
         }
 

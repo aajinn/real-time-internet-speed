@@ -74,7 +74,7 @@ function formatSpeed(speedMbps) {
   if (speedMbps >= 100) return speedMbps.toFixed(0);
   if (speedMbps >= 10) return speedMbps.toFixed(1);
   if (speedMbps >= 1) return speedMbps.toFixed(2);
-  return (speedMbps * 1000).toFixed(0); // Convert to Kbps for display
+  return speedMbps.toFixed(3); // Keep as Mbps but show more precision for small values
 }
 
 async function testSingleFile(testFile, timeout = 15000) {
@@ -102,7 +102,7 @@ async function testSingleFile(testFile, timeout = 15000) {
     clearTimeout(timeoutId);
     
     const duration = (endTime - startTime) / 1000; // Convert to seconds
-    const speedMbps = (testFile.size * 8) / (duration * 1000000); // Convert to Mbps
+    const speedMbps = (testFile.size * 8) / (duration * 1000 * 1000); // Convert to Mbps (bits per second / 1,000,000)
     
     return speedMbps;
   } catch (error) {
@@ -189,8 +189,8 @@ async function performSpeedTest() {
     
     // Update badge with appropriate text
     const badgeText = smoothedSpeed >= 1 ? 
-      latestSpeed : 
-      Math.round(smoothedSpeed * 1000) + 'k';
+      latestSpeed + 'M' : 
+      Math.round(smoothedSpeed * 1000) + 'K';
     
     chrome.action.setBadgeText({ text: badgeText });
     chrome.action.setBadgeBackgroundColor({ color: '#0058cc' });

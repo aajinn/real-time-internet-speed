@@ -11,7 +11,7 @@ function formatSpeedForDisplay(speedString, rawSpeed) {
 
   if (speed >= 1) {
     return {
-      display: speed.toFixed(speed >= 10 ? 1 : 2),
+      display: speed >= 10 ? speed.toFixed(1) : speed.toFixed(2),
       unit: 'Mbps',
       isError: false
     };
@@ -54,11 +54,15 @@ function updateSpeedDisplay(speedData) {
     speedElement.innerText = 'Error';
     unitElement.innerText = 'Connection Failed';
   } else if (isTestingInProgress) {
-speedElement.classList.add('loading-text');
-
+    speedElement.classList.add('loading-text');
+    speedElement.innerText = formatted.display;
+    unitElement.innerText = formatted.unit;
+    // Clear inline styles that interfere with animation
+    speedElement.style.transform = '';
+    speedElement.style.opacity = '';
   } else {
-    speedElement.innerText = `*${formatted.display}`;
-    unitElement.innerText = `-${formatted.unit}-`;
+    speedElement.innerText = formatted.display;
+    unitElement.innerText = formatted.unit;
   }
 
   // Update status
@@ -79,11 +83,13 @@ speedElement.classList.add('loading-text');
   // Update speed history visualization
   updateSpeedGraph();
 
-  // Trigger animation
-  [speedElement, unitElement].forEach((el) => {
-    el.style.opacity = '1';
-    el.style.transform = 'translateY(0)';
-  });
+  // Trigger animation only when not testing
+  if (!isTestingInProgress) {
+    [speedElement, unitElement].forEach((el) => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    });
+  }
 }
 
 function updateSpeedGraph() {
