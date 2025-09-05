@@ -1,0 +1,66 @@
+name: Build Chrome Extension
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Create production build
+      run: |
+        mkdir -p dist
+        
+        # Copy essential extension files
+        cp manifest.json dist/
+        cp background.js dist/
+        cp popup.html dist/
+        cp popup.js dist/
+        cp -r icons dist/
+        
+        # Copy README if exists
+        if [ -f README.md ]; then
+          cp README.md dist/
+        fi
+        
+    - name: Create extension zip
+      run: |
+        cd dist
+        zip -r ../chrome-extension-${{ github.sha }}.zip .
+        cd ..
+        
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: chrome-extension-${{ github.sha }}
+        path: chrome-extension-${{ github.sha }}.zip
+        retention-days: 30
+        
+    - name: Upload to release (if release event)
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./chrome-extension-${{ github.sha }}.zip
+        asset_name: chrome-extension.zip
+        asset_content_type: application/zip
