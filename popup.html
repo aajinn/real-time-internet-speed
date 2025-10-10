@@ -121,7 +121,7 @@
         #speedGraphContainer {
             width: 80%;
             height: 30px;
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             z-index: 1;
         }
 
@@ -235,41 +235,7 @@
             }
         }
 
-        /* Background Effects */
-        .bg-animation {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 300%;
-            height: 100%;
-            background:
-                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
-            opacity: 0.3;
-            animation: floatBackground 8s ease-in-out infinite;
-            z-index: 0;
-        }
 
-        @keyframes floatBackground {
-
-            0%,
-            100% {
-                transform: translateX(0) translateY(0) rotate(0deg);
-            }
-
-            25% {
-                transform: translateX(-20px) translateY(-10px) rotate(1deg);
-            }
-
-            50% {
-                transform: translateX(-10px) translateY(-20px) rotate(-1deg);
-            }
-
-            75% {
-                transform: translateX(-30px) translateY(-5px) rotate(0.5deg);
-            }
-        }
 
         /* Responsive adjustments */
         @media (max-width: 220px) {
@@ -277,7 +243,7 @@
             #main,
             body {
                 width: 180px;
-                height: 220px;
+                height: 225px;
             }
 
             #speed {
