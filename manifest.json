@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Real-Time Internet Speed Monitor",
   "description": "Advanced real-time internet speed monitoring with adaptive testing, speed history, and accurate measurements.",
-  "version": "2.2",
+  "version": "2.3",
   "permissions": [
     "activeTab",
     "background"
