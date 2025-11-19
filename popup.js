@@ -7,6 +7,10 @@ function formatSpeedForDisplay(speedString, rawSpeed) {
     return { display: speedString, unit: 'Mbps', isError: speedString === 'Err' };
   }
 
+  if (speedString === 'Off') {
+    return { display: 'Offline', unit: '', isError: true, isOffline: true };
+  }
+
   const speed = parseFloat(speedString) || 0;
 
   if (speed >= 1) {
@@ -48,7 +52,12 @@ function updateSpeedDisplay(speedData) {
   speedElement.classList.remove('loading-text', 'error-text');
   unitElement.classList.remove('error-unit');
 
-  if (formatted.isError) {
+  if (formatted.isOffline) {
+    speedElement.classList.add('error-text');
+    unitElement.classList.add('error-unit');
+    speedElement.innerText = formatted.display;
+    unitElement.innerText = formatted.unit;
+  } else if (formatted.isError) {
     speedElement.classList.add('error-text');
     unitElement.classList.add('error-unit');
     speedElement.innerText = 'Error';
@@ -67,7 +76,10 @@ function updateSpeedDisplay(speedData) {
 
   // Update status
   if (statusElement) {
-    if (isTestingInProgress) {
+    if (formatted.isOffline) {
+      statusElement.innerText = 'Offline - waiting for connection';
+      statusElement.className = 'status-error';
+    } else if (isTestingInProgress) {
       statusElement.innerText = 'Measuring Speed...';
       statusElement.className = 'status-testing';
     } else if (formatted.isError) {
