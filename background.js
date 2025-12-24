@@ -6,31 +6,35 @@ const MIN_STABLE_SAMPLES = 3;
 const MAX_SAMPLE_WINDOW = 8;
 const STABILITY_THRESHOLD = 0.12; // 12% coefficient of variation triggers early stop
 
-// Test configurations for different connection types
+// Optimized test configurations with multiple CDN endpoints
 const TEST_CONFIGS = {
   fast: {
     testFiles: [
-      { url: 'https://httpbin.org/bytes/1048576', size: 1048576 }, // 1MB
       { url: 'https://httpbin.org/bytes/2097152', size: 2097152 }, // 2MB
+      { url: 'https://speed.cloudflare.com/__down?bytes=2097152', size: 2097152 },
+      { url: 'https://www.google.com/generate_204', size: 0, method: 'HEAD' } // Latency test
     ],
     samples: 2,
-    timeout: 10000
+    timeout: 8000,
+    parallel: true
   },
   medium: {
     testFiles: [
-      { url: 'https://httpbin.org/bytes/524288', size: 524288 }, // 512KB
       { url: 'https://httpbin.org/bytes/1048576', size: 1048576 }, // 1MB
+      { url: 'https://speed.cloudflare.com/__down?bytes=1048576', size: 1048576 },
     ],
-    samples: 3,
-    timeout: 15000
+    samples: 2,
+    timeout: 12000,
+    parallel: false
   },
   slow: {
     testFiles: [
-      { url: 'https://httpbin.org/bytes/102400', size: 102400 }, // 100KB
       { url: 'https://httpbin.org/bytes/262144', size: 262144 }, // 256KB
+      { url: 'https://speed.cloudflare.com/__down?bytes=262144', size: 262144 },
     ],
-    samples: 3,
-    timeout: 20000
+    samples: 2,
+    timeout: 15000,
+    parallel: false
   }
 };
 
@@ -102,43 +106,54 @@ async function testSingleFile(testFile, timeout = 15000) {
 
   try {
     const startTime = performance.now();
-    const response = await fetch(testFile.url + '?cache=' + Date.now(), {
+    const method = testFile.method || 'GET';
+    const cacheBuster = Date.now() + Math.random().toString(36).substr(2, 9);
+    
+    const response = await fetch(testFile.url + (testFile.url.includes('?') ? '&' : '?') + 'cb=' + cacheBuster, {
+      method,
       cache: 'no-store',
       signal: controller.signal,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0'
+        'Expires': '0',
+        'User-Agent': 'SpeedTest/2.0'
       }
     });
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    // Read the response to ensure complete download
-    await response.arrayBuffer();
+    let actualSize = testFile.size;
+    if (method === 'GET' && testFile.size > 0) {
+      const reader = response.body.getReader();
+      let receivedLength = 0;
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        receivedLength += value.length;
+      }
+      actualSize = receivedLength;
+    }
+    
     const endTime = performance.now();
-
     clearTimeout(timeoutId);
 
-    const duration = (endTime - startTime) / 1000; // Convert to seconds
-    const speedMbps = (testFile.size * 8) / (duration * 1000 * 1000); // Convert to Mbps (bits per second / 1,000,000)
-
+    const duration = (endTime - startTime) / 1000;
+    if (duration < 0.1) throw new Error('Test too fast, likely cached');
+    
+    const speedMbps = (actualSize * 8) / (duration * 1000 * 1000);
     return speedMbps;
   } catch (error) {
     clearTimeout(timeoutId);
-    console.warn(`Test failed for ${testFile.url}:`, error.message);
     throw error;
   }
 }
 
 async function performSpeedTest() {
-  if (isTestingInProgress) {
-    console.log('Speed test already in progress, skipping...');
-    return;
-  }
+  if (isTestingInProgress) return;
 
   if (!navigator.onLine) {
-    console.log('Device offline, skipping speed test.');
     latestSpeed = 'Off';
     chrome.action.setBadgeText({ text: 'Off' });
     chrome.action.setBadgeBackgroundColor({ color: '#666666' });
@@ -148,54 +163,51 @@ async function performSpeedTest() {
   isTestingInProgress = true;
 
   try {
-    // Determine which test configuration to use
-    const lastSpeed = speedHistory.length > 0 ?
-      speedHistory[speedHistory.length - 1] : 1;
+    const lastSpeed = speedHistory.length > 0 ? speedHistory[speedHistory.length - 1] : 1;
     const connectionType = determineConnectionType(lastSpeed);
     const config = TEST_CONFIGS[connectionType];
 
     const allSpeeds = [];
-    let successfulTests = 0;
-
-    // Test with primary test files
-    let earlyStop = false;
-    for (const testFile of config.testFiles) {
-      for (let sample = 0; sample < config.samples; sample++) {
+    
+    // Parallel testing for fast connections
+    if (config.parallel && connectionType === 'fast') {
+      const promises = config.testFiles.slice(0, 2).map(testFile => 
+        testSingleFile(testFile, config.timeout).catch(() => null)
+      );
+      
+      const results = await Promise.allSettled(promises);
+      results.forEach(result => {
+        if (result.status === 'fulfilled' && result.value > 0 && result.value < 2000) {
+          allSpeeds.push(result.value);
+        }
+      });
+    } else {
+      // Sequential testing with early termination
+      for (const testFile of config.testFiles) {
         try {
           const speed = await testSingleFile(testFile, config.timeout);
-          if (speed > 0 && speed < 1000) { // Sanity check (max 1Gbps)
+          if (speed > 0 && speed < 2000) {
             allSpeeds.push(speed);
-            successfulTests++;
-
-            if (hasStableResults(allSpeeds)) {
-              earlyStop = true;
-              break;
-            }
+            if (allSpeeds.length >= 2 && hasStableResults(allSpeeds)) break;
           }
         } catch (error) {
-          console.warn(`Sample ${sample + 1} failed for ${testFile.url}`);
+          continue;
         }
-
-        // Add small delay between tests to avoid overwhelming the server
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
-
-      if (earlyStop) break;
     }
 
-    // If primary tests failed, try fallback tests
-    if (successfulTests === 0) {
-      console.log('Primary tests failed, trying fallback tests...');
+    // Fallback tests if needed
+    if (allSpeeds.length === 0) {
       for (const fallbackTest of FALLBACK_TESTS) {
         try {
-          const speed = await testSingleFile(fallbackTest, 10000);
-          if (speed > 0 && speed < 1000) {
+          const speed = await testSingleFile(fallbackTest, 8000);
+          if (speed > 0 && speed < 2000) {
             allSpeeds.push(speed);
-            successfulTests++;
-            break; // One successful fallback test is enough
+            break;
           }
         } catch (error) {
-          console.warn(`Fallback test failed for ${fallbackTest.url}`);
+          continue;
         }
       }
     }
@@ -242,24 +254,30 @@ async function performSpeedTest() {
   }
 }
 
-// Adaptive testing interval based on connection stability
+// Optimized adaptive interval
 function getTestInterval() {
-  if (speedHistory.length < 3) return 5000; // Initial frequent testing
+  if (speedHistory.length < 2) return 3000;
 
-  const recentSpeeds = speedHistory.slice(-5);
-  const { variance } = calculateVariance(recentSpeeds);
+  const recentSpeeds = speedHistory.slice(-4);
+  const { variance, mean } = calculateVariance(recentSpeeds);
+  const cv = mean > 0 ? Math.sqrt(variance) / mean : 1;
 
-  // More stable connection = less frequent testing
-  if (variance < 0.5) return 12000; // Very stable
-  if (variance < 2) return 8000;  // Somewhat stable
-  return 4000; // Unstable connection, test more frequently
+  // Faster connections can be tested less frequently when stable
+  const baseInterval = mean > 50 ? 15000 : mean > 10 ? 10000 : 6000;
+  
+  if (cv < 0.1) return baseInterval * 1.5; // Very stable
+  if (cv < 0.2) return baseInterval; // Stable
+  return Math.max(baseInterval * 0.6, 3000); // Unstable, test more often
 }
 
-// Dynamic interval scheduling
+// Optimized scheduling with connection awareness
 function scheduleNextTest() {
   const interval = getTestInterval();
-  setTimeout(() => {
-    performSpeedTest().then(() => scheduleNextTest());
+  setTimeout(async () => {
+    if (navigator.onLine && !isTestingInProgress) {
+      await performSpeedTest();
+    }
+    scheduleNextTest();
   }, interval);
 }
 
