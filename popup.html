@@ -45,29 +45,69 @@
         }
 
 
+        #speed-container {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 6px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            z-index: 1;
+            margin-bottom: 25px;
+        }
+
         #speed {
             font-size: 3.2rem;
             font-weight: 700;
             color: #fff;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
             animation: pulse 0.6s ease-in-out;
-            z-index: 1;
             font-family: 'Segoe UI', system-ui, sans-serif;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            margin-bottom: 0px;
+            line-height: 1;
         }
 
         #unit {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 400;
+            align-self: flex-end;
+            margin-bottom: 8px;
+        }
+
+        #ping-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
             opacity: 0;
             transform: translateY(-20px);
             transition: opacity 0.5s ease, transform 0.5s ease;
             z-index: 1;
+            margin-bottom: 10px;
+            margin-top: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 12px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .ping-icon {
+            font-size: 0.9rem;
+            margin-right: 2px;
+        }
+
+        #ping {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffd700;
+        }
+
+        #ping-unit {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.8);
             font-weight: 500;
-            margin-bottom: 15px;
         }
 
         #status {
@@ -181,6 +221,10 @@
         .error-unit {
             color: #ff6b6b !important;
             font-size: 0.8rem !important;
+        }
+
+        .error-ping {
+            color: #ff6b6b !important;
         }
 
         .handshake:hover {
@@ -329,9 +373,16 @@
 <body>
     <div id="main">
         <div class="bg-animation"></div>
+        <div id="ping-container">
+            <span class="ping-icon">📡</span>
+            <span id="ping">--</span>
+            <span id="ping-unit">ms</span>
+        </div>
         <div id="speedGraphContainer"></div>
-        <div id="speed">0.00</div>
-        <div id="unit">Mbps</div>
+        <div id="speed-container">
+            <span id="speed">0.00</span>
+            <span id="unit">Mbps</span>
+        </div>
 
 
 

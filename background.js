@@ -1,4 +1,5 @@
 let latestSpeed = '--';
+let latestPing = '--';
 let isTestingInProgress = false;
 let speedHistory = [];
 const MAX_HISTORY = 10;
@@ -42,6 +43,13 @@ const TEST_CONFIGS = {
 const FALLBACK_TESTS = [
   { url: 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png', size: 13504 },
   { url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Vd-Orig.png/256px-Vd-Orig.png', size: 15000 }
+];
+
+// Ping test endpoints
+const PING_ENDPOINTS = [
+  'https://www.google.com/generate_204',
+  'https://httpbin.org/status/200',
+  'https://speed.cloudflare.com/__down?bytes=0'
 ];
 
 function addToHistory(speed) {
@@ -98,6 +106,30 @@ function formatSpeed(speedMbps) {
   if (speedMbps >= 10) return speedMbps.toFixed(1);
   if (speedMbps >= 1) return speedMbps.toFixed(2);
   return speedMbps.toFixed(3); // Keep as Mbps but show more precision for small values
+}
+
+async function measurePing() {
+  const results = [];
+  
+  for (const endpoint of PING_ENDPOINTS.slice(0, 2)) {
+    try {
+      const start = performance.now();
+      const response = await fetch(endpoint + '?t=' + Date.now(), {
+        method: 'HEAD',
+        cache: 'no-store',
+        signal: AbortSignal.timeout(3000)
+      });
+      
+      if (response.ok) {
+        const ping = Math.round(performance.now() - start);
+        if (ping > 0 && ping < 5000) results.push(ping);
+      }
+    } catch (error) {
+      continue;
+    }
+  }
+  
+  return results.length > 0 ? Math.round(results.reduce((a, b) => a + b) / results.length) : null;
 }
 
 async function testSingleFile(testFile, timeout = 15000) {
@@ -234,6 +266,10 @@ async function performSpeedTest() {
     addToHistory(smoothedSpeed);
     latestSpeed = formatSpeed(smoothedSpeed);
 
+    // Measure ping
+    const ping = await measurePing();
+    latestPing = ping !== null ? ping.toString() : '--';
+
     // Update badge with appropriate text
     const badgeText = smoothedSpeed >= 1 ?
       latestSpeed + 'M' :
@@ -247,6 +283,7 @@ async function performSpeedTest() {
   } catch (error) {
     console.error('Speed test failed:', error);
     latestSpeed = 'Err';
+    latestPing = 'Err';
     chrome.action.setBadgeText({ text: 'Err' });
     chrome.action.setBadgeBackgroundColor({ color: '#ff4444' });
   } finally {
@@ -289,12 +326,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'getSpeed') {
     sendResponse({
       speed: latestSpeed,
+      ping: latestPing,
       history: speedHistory.slice(-5), // Send recent history
       isTestingInProgress
     });
   } else if (message.type === 'forceTest') {
     performSpeedTest().then(() => {
-      sendResponse({ speed: latestSpeed });
+      sendResponse({ speed: latestSpeed, ping: latestPing });
     });
     return true; // Indicates async response
   }

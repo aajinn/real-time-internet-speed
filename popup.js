@@ -1,4 +1,5 @@
 let currentSpeed = '--';
+let currentPing = '--';
 let speedHistory = [];
 let isTestingInProgress = false;
 
@@ -32,17 +33,21 @@ function formatSpeedForDisplay(speedString, rawSpeed) {
 function updateSpeedDisplay(speedData) {
   const speedElement = document.getElementById('speed');
   const unitElement = document.getElementById('unit');
+  const pingElement = document.getElementById('ping');
+  const pingUnitElement = document.getElementById('ping-unit');
   const statusElement = document.getElementById('status');
 
   if (!speedData || !speedData.speed) {
     console.error('Failed to retrieve speed data.');
     speedElement.innerText = '--';
     unitElement.innerText = 'Mbps';
+    if (pingElement) pingElement.innerText = '--';
     if (statusElement) statusElement.innerText = 'Connection Error';
     return;
   }
 
   currentSpeed = speedData.speed;
+  currentPing = speedData.ping || '--';
   speedHistory = speedData.history || [];
   isTestingInProgress = speedData.isTestingInProgress || false;
 
@@ -50,28 +55,36 @@ function updateSpeedDisplay(speedData) {
 
   // Update main display
   speedElement.classList.remove('loading-text', 'error-text');
-  unitElement.classList.remove('error-unit');
+  const speedContainer = document.getElementById('speed-container');
+  if (speedContainer) speedContainer.classList.remove('error-unit');
+  if (pingElement) pingElement.classList.remove('error-ping');
 
   if (formatted.isOffline) {
     speedElement.classList.add('error-text');
-    unitElement.classList.add('error-unit');
+    if (speedContainer) speedContainer.classList.add('error-unit');
+    if (pingElement) pingElement.classList.add('error-ping');
     speedElement.innerText = formatted.display;
     unitElement.innerText = formatted.unit;
+    if (pingElement) pingElement.innerText = '--';
   } else if (formatted.isError) {
     speedElement.classList.add('error-text');
-    unitElement.classList.add('error-unit');
+    if (speedContainer) speedContainer.classList.add('error-unit');
+    if (pingElement) pingElement.classList.add('error-ping');
     speedElement.innerText = 'Error';
     unitElement.innerText = 'Connection Failed';
+    if (pingElement) pingElement.innerText = '--';
   } else if (isTestingInProgress) {
     speedElement.classList.add('loading-text');
     speedElement.innerText = formatted.display;
     unitElement.innerText = formatted.unit;
+    if (pingElement) pingElement.innerText = currentPing;
     // Clear inline styles that interfere with animation
     speedElement.style.transform = '';
     speedElement.style.opacity = '';
   } else {
     speedElement.innerText = formatted.display;
     unitElement.innerText = formatted.unit;
+    if (pingElement) pingElement.innerText = currentPing;
   }
 
   // Update status
@@ -97,9 +110,15 @@ function updateSpeedDisplay(speedData) {
 
   // Trigger animation only when not testing
   if (!isTestingInProgress) {
-    [speedElement, unitElement].forEach((el) => {
-      el.style.opacity = '1';
-      el.style.transform = 'translateY(0)';
+    const elementsToAnimate = [speedContainer];
+    const pingContainer = document.getElementById('ping-container');
+    if (pingContainer) elementsToAnimate.push(pingContainer);
+    
+    elementsToAnimate.forEach((el) => {
+      if (el) {
+        el.style.opacity = '1';
+        el.style.transform = 'translateY(0)';
+      }
     });
   }
 }
@@ -164,10 +183,14 @@ document.body.addEventListener('click', (e) => {
     return;
   }
 
-  const speedElement = document.getElementById('speed');
-  const unitElement = document.getElementById('unit');
+  const speedContainer = document.getElementById('speed-container');
+  const pingContainer = document.getElementById('ping-container');
 
-  [speedElement, unitElement].forEach((el) => {
+  const elementsToAnimate = [];
+  if (speedContainer) elementsToAnimate.push(speedContainer);
+  if (pingContainer) elementsToAnimate.push(pingContainer);
+
+  elementsToAnimate.forEach((el) => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(-20px)';
   });
