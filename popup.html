@@ -18,13 +18,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 200px;
-            height: 200px;
+            width: 100vw;
+            height: 100vh;
             background: linear-gradient(135deg, #63656e 0%, #9d8ead 100%);
             color: #fff;
             position: relative;
             overflow: hidden;
-
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
 
@@ -34,14 +33,14 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 200px;
-            height: 200px;
+            width: 100vw;
+            height: 100vh;
             background: #f5f7fa;
             color: #333;
             position: relative;
             overflow: hidden;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            margin: 0;
+            padding: 0;
         }
 
 
@@ -298,11 +297,9 @@
     <style>
         #ratingDiv {
             width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #63656e 0%, #9d8ead 100%);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
             padding: 20px;
-            border-radius: 12px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
             display: flex;
@@ -313,10 +310,16 @@
         }
 
         #ratingDiv h3 {
-            font-size: 16px;
+            font-size: 12px;
             font-weight: 600;
+            margin: 0;
+            padding: 0%;
             margin-bottom: 10px;
+            margin-top: 10px;
             color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            white-space: nowrap;
         }
 
         #ratingDiv p {
@@ -327,7 +330,7 @@
         }
 
         #ratingDiv a {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
             color: white;
             padding: 8px 16px;
             border-radius: 20px;
@@ -336,19 +339,20 @@
             font-weight: 500;
             margin-bottom: 10px;
             display: inline-block;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px);
             transition: all 0.3s ease;
         }
 
         #ratingDiv a:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.2);
             transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         #ratingDiv button {
-            background: none;
-            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: rgba(255, 255, 255, 0.8);
             font-size: 11px;
             cursor: pointer;
@@ -356,6 +360,7 @@
             padding: 4px 8px;
             border-radius: 10px;
             transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
 
         #dismiss-btn {
@@ -364,8 +369,9 @@
         }
 
         #ratingDiv button:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.2);
             color: white;
+            transform: translateY(-1px);
         }
     </style>
 </head>
