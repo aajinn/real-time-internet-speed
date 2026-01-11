@@ -21,27 +21,16 @@ jobs:
       with:
         node-version: '18'
       
-    - name: Create production build
-      run: |
-        mkdir -p dist
-        
-        # Copy essential extension files
-        cp manifest.json dist/
-        cp background.js dist/
-        cp popup.html dist/
-        cp popup.js dist/
-        cp -r icons dist/
-        
-        # Copy README if exists
-        if [ -f README.md ]; then
-          cp README.md dist/
-        fi
-        
     - name: Create extension zip
       run: |
-        cd dist
-        zip -r ../chrome-extension-${{ github.sha }}.zip .
-        cd ..
+        # Create zip directly from root files
+        zip -r chrome-extension-${{ github.sha }}.zip \
+          manifest.json \
+          background.js \
+          popup.html \
+          popup.js \
+          icons/ \
+          README.md
         
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
