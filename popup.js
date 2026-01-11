@@ -206,6 +206,13 @@ document.addEventListener('DOMContentLoaded', () => {
     testButton.addEventListener('click', forceSpeedTest);
   }
 
+  // Add pin button functionality
+  const pinButton = document.getElementById('pin-btn');
+  if (pinButton) {
+    updatePinButtonState();
+    pinButton.addEventListener('click', handlePinClick);
+  }
+
   // Add speed graph
   const graphContainer = document.getElementById('speedGraphContainer');
   if (graphContainer) {
@@ -222,6 +229,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+function updatePinButtonState() {
+  const pinButton = document.getElementById('pin-btn');
+  if (!pinButton) return;
+
+  // Check if extension is likely pinned by checking localStorage
+  const isPinned = localStorage.getItem('extensionPinned') === 'true';
+  
+  if (isPinned) {
+    pinButton.innerHTML = '📌 Pinned';
+    pinButton.title = 'Extension is pinned - click to unpin';
+    pinButton.style.background = 'rgba(255, 215, 0, 0.2)';
+    pinButton.style.borderColor = 'rgba(255, 215, 0, 0.3)';
+  } else {
+    pinButton.innerHTML = '📌 Pin';
+    pinButton.title = 'Pin extension to toolbar';
+    pinButton.style.background = 'rgba(255, 255, 255, 0.1)';
+    pinButton.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+  }
+}
+
+function handlePinClick() {
+  const isPinned = localStorage.getItem('extensionPinned') === 'true';
+  
+  if (isPinned) {
+    // Show unpin instructions
+    alert('To unpin this extension:\n\n1. Right-click the extension icon in your toolbar\n2. Select "Remove from toolbar"\n\nOr:\n1. Click the puzzle piece icon (🧩)\n2. Click the pin icon next to this extension to unpin it');
+    localStorage.setItem('extensionPinned', 'false');
+  } else {
+    // Show pin instructions
+    alert('To pin this extension:\n\n1. Click the puzzle piece icon (🧩) in your browser toolbar\n2. Find "Real-Time Internet Speed Monitor"\n3. Click the pin icon next to it\n\nThis will keep the extension visible in your toolbar!');
+    localStorage.setItem('extensionPinned', 'true');
+  }
+  
+  updatePinButtonState();
+}
 
 function handleRatingSystem() {
   const divKey = 'ratingDivLastShown';
