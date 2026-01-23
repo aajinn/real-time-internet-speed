@@ -125,14 +125,15 @@ function updateSpeedDisplay(speedData) {
 
 function updateSpeedGraph() {
   const graphElement = document.getElementById('speedGraph');
-  if (!graphElement || speedHistory.length === 0) return;
+  if (!graphElement || !speedHistory || speedHistory.length === 0) return;
 
-  const maxSpeed = Math.max(...speedHistory);
-  const minSpeed = Math.min(...speedHistory);
+  const historyArray = Array.isArray(speedHistory) ? speedHistory : speedHistory.slice(-8);
+  const maxSpeed = Math.max(...historyArray);
+  const minSpeed = Math.min(...historyArray);
   const range = maxSpeed - minSpeed || 1;
 
   // Create simple ASCII-like graph
-  const bars = speedHistory.slice(-8).map(speed => {
+  const bars = historyArray.map(speed => {
     const percentage = ((speed - minSpeed) / range) * 100;
     return `<div class="graph-bar" style="height: ${Math.max(10, percentage)}%"></div>`;
   }).join('');

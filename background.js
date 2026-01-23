@@ -1,7 +1,35 @@
 let latestSpeed = '--';
 let latestPing = '--';
 let isTestingInProgress = false;
-let speedHistory = [];
+class CircularBuffer {
+  constructor(size) {
+    this.size = size;
+    this.buffer = new Array(size);
+    this.index = 0;
+    this.length = 0;
+  }
+  
+  push(item) {
+    this.buffer[this.index] = item;
+    this.index = (this.index + 1) % this.size;
+    if (this.length < this.size) this.length++;
+  }
+  
+  toArray() {
+    if (this.length === 0) return [];
+    const result = new Array(this.length);
+    for (let i = 0; i < this.length; i++) {
+      result[i] = this.buffer[(this.index - this.length + i + this.size) % this.size];
+    }
+    return result;
+  }
+  
+  slice(start) {
+    return this.toArray().slice(start);
+  }
+}
+
+let speedHistory = new CircularBuffer(10);
 const MAX_HISTORY = 10;
 const MIN_STABLE_SAMPLES = 3;
 const MAX_SAMPLE_WINDOW = 8;
@@ -54,9 +82,6 @@ const PING_ENDPOINTS = [
 
 function addToHistory(speed) {
   speedHistory.push(speed);
-  if (speedHistory.length > MAX_HISTORY) {
-    speedHistory.shift();
-  }
 }
 
 function getMedianSpeed(speeds) {
@@ -256,9 +281,10 @@ async function performSpeedTest() {
 
     // Smooth the result with history if available
     let smoothedSpeed = finalSpeed;
-    if (speedHistory.length > 0) {
-      const recentAverage = speedHistory.slice(-3).reduce((a, b) => a + b, 0) /
-        Math.min(speedHistory.length, 3);
+    const historyArray = speedHistory.toArray();
+    if (historyArray.length > 0) {
+      const recentSpeeds = historyArray.slice(-3);
+      const recentAverage = recentSpeeds.reduce((a, b) => a + b, 0) / recentSpeeds.length;
       // Weighted average: 70% new result, 30% recent history
       smoothedSpeed = (finalSpeed * 0.7) + (recentAverage * 0.3);
     }
@@ -293,9 +319,10 @@ async function performSpeedTest() {
 
 // Optimized adaptive interval
 function getTestInterval() {
-  if (speedHistory.length < 2) return 3000;
+  const historyArray = speedHistory.toArray();
+  if (historyArray.length < 2) return 3000;
 
-  const recentSpeeds = speedHistory.slice(-4);
+  const recentSpeeds = historyArray.slice(-4);
   const { variance, mean } = calculateVariance(recentSpeeds);
   const cv = mean > 0 ? Math.sqrt(variance) / mean : 1;
 
