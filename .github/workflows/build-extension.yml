@@ -9,8 +9,60 @@ on:
     types: [ created ]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install Puppeteer
+      run: npm install puppeteer
+      
+    - name: Run HTML tests
+      run: |
+        node -e "
+        const puppeteer = require('puppeteer');
+        const path = require('path');
+        
+        (async () => {
+          const browser = await puppeteer.launch();
+          const page = await browser.newPage();
+          
+          page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+          
+          await page.goto('file://' + path.resolve('./test.html'));
+          await page.waitForTimeout(1000);
+          
+          const results = await page.evaluate(() => {
+            const failedTests = document.querySelectorAll('.test.fail');
+            return {
+              total: document.querySelectorAll('.test').length,
+              failed: failedTests.length,
+              failures: Array.from(failedTests).map(el => el.textContent)
+            };
+          });
+          
+          console.log('Test Results:', results);
+          
+          if (results.failed > 0) {
+            console.error('Tests failed:', results.failures);
+            process.exit(1);
+          }
+          
+          console.log('All tests passed!');
+          await browser.close();
+        })();
+        "
+
   build:
     runs-on: ubuntu-latest
+    needs: test
     
     steps:
     - name: Checkout code

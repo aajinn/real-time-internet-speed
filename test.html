@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extension Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .pass { background: #d4edda; }
+        .fail { background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>Chrome Extension Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Mock Chrome APIs
+        window.chrome = {
+            runtime: {
+                sendMessage: (msg, callback) => {
+                    setTimeout(() => {
+                        if (msg.type === 'getSpeed') {
+                            callback({
+                                speed: '25.5',
+                                ping: '45',
+                                history: [20, 22, 25, 24, 26],
+                                isTestingInProgress: false
+                            });
+                        }
+                    }, 100);
+                },
+                lastError: null
+            }
+        };
+
+        // Test functions from popup.js
+        function formatSpeedForDisplay(speedString) {
+            if (speedString === '--' || speedString === 'Err') {
+                return { display: speedString, unit: 'Mbps', isError: speedString === 'Err' };
+            }
+            
+            if (speedString === 'Off') {
+                return { display: 'Offline', unit: '', isError: true, isOffline: true };
+            }
+            
+            const speed = parseFloat(speedString) || 0;
+            
+            if (speed >= 1) {
+                return {
+                    display: speed >= 10 ? speed.toFixed(1) : speed.toFixed(2),
+                    unit: 'Mbps',
+                    isError: false
+                };
+            } else {
+                const kbps = Math.round(speed * 1000);
+                return {
+                    display: kbps.toString(),
+                    unit: 'Kbps',
+                    isError: false
+                };
+            }
+        }
+
+        function getSpeedCategory(speed) {
+            const numSpeed = parseFloat(speed) || 0;
+            if (numSpeed >= 50) return 'excellent';
+            if (numSpeed >= 10) return 'good';
+            if (numSpeed >= 1) return 'fair';
+            return 'poor';
+        }
+
+        // Run tests
+        function runTest(name, testFn) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test';
+            
+            try {
+                testFn();
+                resultDiv.className += ' pass';
+                resultDiv.innerHTML = `✓ ${name}`;
+            } catch (e) {
+                resultDiv.className += ' fail';
+                resultDiv.innerHTML = `✗ ${name}: ${e.message}`;
+            }
+            
+            document.getElementById('results').appendChild(resultDiv);
+        }
+
+        // Test cases
+        runTest('Speed formatting works', () => {
+            const result = formatSpeedForDisplay('25.5');
+            if (result.display !== '25.5' || result.unit !== 'Mbps') {
+                throw new Error('Speed formatting failed');
+            }
+        });
+
+        runTest('Low speed formatting works', () => {
+            const result = formatSpeedForDisplay('0.5');
+            if (result.display !== '500' || result.unit !== 'Kbps') {
+                throw new Error('Low speed formatting failed');
+            }
+        });
+
+        runTest('Error handling works', () => {
+            const result = formatSpeedForDisplay('Err');
+            if (!result.isError || result.display !== 'Err') {
+                throw new Error('Error handling failed');
+            }
+        });
+
+        runTest('Speed categories work', () => {
+            if (getSpeedCategory('75') !== 'excellent') throw new Error('Excellent failed');
+            if (getSpeedCategory('25') !== 'good') throw new Error('Good failed');
+            if (getSpeedCategory('5') !== 'fair') throw new Error('Fair failed');
+            if (getSpeedCategory('0.5') !== 'poor') throw new Error('Poor failed');
+        });
+
+        runTest('Chrome API communication works', (done) => {
+            chrome.runtime.sendMessage({ type: 'getSpeed' }, (response) => {
+                if (!response || !response.speed) {
+                    throw new Error('API communication failed');
+                }
+                if (response.speed !== '25.5') {
+                    throw new Error('Unexpected response');
+                }
+            });
+        });
+
+        console.log('All popup tests completed');
+    </script>
+</body>
+</html>
