@@ -1,6 +1,6 @@
 # Real-Time Internet Speed Monitor (v2.7.0)
 
-An advanced Chrome extension that provides accurate real-time internet speed monitoring with intelligent adaptive testing algorithms, automated testing workflows, and optimized performance.
+An advanced Chrome extension that provides accurate real-time internet speed monitoring with intelligent adaptive testing algorithms and optimized performance.
 
 ## 🚀 Key Features
 
