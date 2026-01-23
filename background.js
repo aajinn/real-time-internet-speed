@@ -1,6 +1,41 @@
 let latestSpeed = '--';
 let latestPing = '--';
 let isTestingInProgress = false;
+class RequestQueue {
+  constructor(maxConcurrent = 2) {
+    this.maxConcurrent = maxConcurrent;
+    this.running = 0;
+    this.queue = [];
+  }
+  
+  async add(requestFn) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ requestFn, resolve, reject });
+      this.process();
+    });
+  }
+  
+  async process() {
+    if (this.running >= this.maxConcurrent || this.queue.length === 0) return;
+    
+    this.running++;
+    const { requestFn, resolve, reject } = this.queue.shift();
+    
+    try {
+      const result = await requestFn();
+      resolve(result);
+    } catch (error) {
+      reject(error);
+    } finally {
+      this.running--;
+      this.process();
+    }
+  }
+}
+
+const requestQueue = new RequestQueue(2);
+const connectionPool = new Map();
+
 class CircularBuffer {
   constructor(size) {
     this.size = size;
@@ -136,75 +171,87 @@ function formatSpeed(speedMbps) {
 async function measurePing() {
   const results = [];
   
-  for (const endpoint of PING_ENDPOINTS.slice(0, 2)) {
-    try {
+  const pingPromises = PING_ENDPOINTS.slice(0, 2).map(endpoint => 
+    requestQueue.add(async () => {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 3000);
+      
       const start = performance.now();
       const response = await fetch(endpoint + '?t=' + Date.now(), {
         method: 'HEAD',
         cache: 'no-store',
-        signal: AbortSignal.timeout(3000)
+        signal: controller.signal,
+        keepalive: true
       });
       
       if (response.ok) {
         const ping = Math.round(performance.now() - start);
-        if (ping > 0 && ping < 5000) results.push(ping);
+        return ping > 0 && ping < 5000 ? ping : null;
       }
-    } catch (error) {
-      continue;
+      return null;
+    }).catch(() => null)
+  );
+  
+  const pingResults = await Promise.allSettled(pingPromises);
+  pingResults.forEach(result => {
+    if (result.status === 'fulfilled' && result.value) {
+      results.push(result.value);
     }
-  }
+  });
   
   return results.length > 0 ? Math.round(results.reduce((a, b) => a + b) / results.length) : null;
 }
 
 async function testSingleFile(testFile, timeout = 15000) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  return requestQueue.add(async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-  try {
-    const startTime = performance.now();
-    const method = testFile.method || 'GET';
-    const cacheBuster = Date.now() + Math.random().toString(36).substr(2, 9);
-    
-    const response = await fetch(testFile.url + (testFile.url.includes('?') ? '&' : '?') + 'cb=' + cacheBuster, {
-      method,
-      cache: 'no-store',
-      signal: controller.signal,
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'User-Agent': 'SpeedTest/2.0'
-      }
-    });
-
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    let actualSize = testFile.size;
-    if (method === 'GET' && testFile.size > 0) {
-      const reader = response.body.getReader();
-      let receivedLength = 0;
+    try {
+      const startTime = performance.now();
+      const method = testFile.method || 'GET';
+      const cacheBuster = Date.now() + Math.random().toString(36).slice(2, 11);
       
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        receivedLength += value.length;
-      }
-      actualSize = receivedLength;
-    }
-    
-    const endTime = performance.now();
-    clearTimeout(timeoutId);
+      const response = await fetch(testFile.url + (testFile.url.includes('?') ? '&' : '?') + 'cb=' + cacheBuster, {
+        method,
+        cache: 'no-store',
+        signal: controller.signal,
+        keepalive: true,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Connection': 'keep-alive',
+          'User-Agent': 'SpeedTest/2.0'
+        }
+      });
 
-    const duration = (endTime - startTime) / 1000;
-    if (duration < 0.1) throw new Error('Test too fast, likely cached');
-    
-    const speedMbps = (actualSize * 8) / (duration * 1000 * 1000);
-    return speedMbps;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
-  }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      let actualSize = testFile.size;
+      if (method === 'GET' && testFile.size > 0) {
+        const reader = response.body.getReader();
+        let receivedLength = 0;
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          receivedLength += value.length;
+        }
+        actualSize = receivedLength;
+      }
+      
+      const endTime = performance.now();
+      clearTimeout(timeoutId);
+
+      const duration = (endTime - startTime) / 1000;
+      if (duration < 0.1) throw new Error('Test too fast, likely cached');
+      
+      const speedMbps = (actualSize * 8) / (duration * 1000 * 1000);
+      return speedMbps;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  });
 }
 
 async function performSpeedTest() {
