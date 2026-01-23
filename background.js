@@ -174,21 +174,28 @@ async function measurePing() {
   const pingPromises = PING_ENDPOINTS.slice(0, 2).map(endpoint => 
     requestQueue.add(async () => {
       const controller = new AbortController();
-      setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
       
-      const start = performance.now();
-      const response = await fetch(endpoint + '?t=' + Date.now(), {
-        method: 'HEAD',
-        cache: 'no-store',
-        signal: controller.signal,
-        keepalive: true
-      });
-      
-      if (response.ok) {
-        const ping = Math.round(performance.now() - start);
-        return ping > 0 && ping < 5000 ? ping : null;
+      try {
+        const start = performance.now();
+        const response = await fetch(endpoint + '?t=' + Date.now(), {
+          method: 'HEAD',
+          cache: 'no-store',
+          signal: controller.signal,
+          keepalive: true
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const ping = Math.round(performance.now() - start);
+          return ping > 0 && ping < 5000 ? ping : null;
+        }
+        return null;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        return null;
       }
-      return null;
     }).catch(() => null)
   );
   
@@ -297,7 +304,6 @@ async function performSpeedTest() {
         } catch (error) {
           continue;
         }
-        await new Promise(resolve => setTimeout(resolve, 50));
       }
     }
 
@@ -386,14 +392,19 @@ function scheduleNextTest() {
   const interval = getTestInterval();
   setTimeout(async () => {
     if (navigator.onLine && !isTestingInProgress) {
-      await performSpeedTest();
+      await performSpeedTest().catch(error => {
+        console.error('Scheduled speed test failed:', error);
+      });
     }
     scheduleNextTest();
   }, interval);
 }
 
 // Start initial test and scheduling
-performSpeedTest().then(() => scheduleNextTest());
+performSpeedTest().then(() => scheduleNextTest()).catch(error => {
+  console.error('Initial speed test failed:', error);
+  scheduleNextTest();
+});
 
 // Listen for requests from popup.js
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -407,6 +418,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   } else if (message.type === 'forceTest') {
     performSpeedTest().then(() => {
       sendResponse({ speed: latestSpeed, ping: latestPing });
+    }).catch(error => {
+      console.error('Force test failed:', error);
+      sendResponse({ speed: 'Err', ping: 'Err' });
     });
     return true; // Indicates async response
   }
