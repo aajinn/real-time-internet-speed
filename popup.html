@@ -59,10 +59,25 @@
         /* Speed hero */
         .speed-hero {
             display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 14px 10px;
+            position: relative;
+        }
+
+        .speed-block {
+            display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 18px 0 14px;
-            position: relative;
+            flex: 1;
+        }
+
+        .speed-divider {
+            width: 1px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            margin: 0 6px;
+            align-self: center;
         }
 
         .speed-label {
@@ -70,32 +85,40 @@
             font-weight: 600;
             letter-spacing: 0.1em;
             text-transform: uppercase;
-            color: rgba(255,255,255,0.3);
-            margin-bottom: 4px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 2px;
         }
 
-        #speed-container {
+        #speed-container, #upload-container {
             display: flex;
             align-items: baseline;
-            gap: 5px;
+            gap: 4px;
             opacity: 0;
             transform: translateY(8px);
             transition: opacity 0.4s ease, transform 0.4s ease;
         }
 
         #speed {
-            font-size: 3.6rem;
+            font-size: 2.8rem;
             font-weight: 700;
             line-height: 1;
             color: #fff;
             letter-spacing: -2px;
         }
 
-        #unit {
-            font-size: 0.85rem;
+        #upload-speed {
+            font-size: 2.8rem;
+            font-weight: 700;
+            line-height: 1;
+            color: rgba(255,255,255,0.75);
+            letter-spacing: -2px;
+        }
+
+        #unit, #upload-unit {
+            font-size: 0.8rem;
             color: rgba(255,255,255,0.4);
             font-weight: 400;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         /* Chart */
@@ -299,10 +322,20 @@
         </div>
 
         <div class="speed-hero">
-            <span class="speed-label">Download</span>
-            <div id="speed-container">
-                <span id="speed">0.00</span>
-                <span id="unit">Mbps</span>
+            <div class="speed-block">
+                <span class="speed-label">↓ Download</span>
+                <div id="speed-container">
+                    <span id="speed">--</span>
+                    <span id="unit">Mbps</span>
+                </div>
+            </div>
+            <div class="speed-divider"></div>
+            <div class="speed-block">
+                <span class="speed-label">↑ Upload</span>
+                <div id="upload-container">
+                    <span id="upload-speed">--</span>
+                    <span id="upload-unit">Mbps</span>
+                </div>
             </div>
         </div>
 

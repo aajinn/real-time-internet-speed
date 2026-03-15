@@ -1,4 +1,5 @@
 let currentSpeed = '--';
+let currentUpload = '--';
 let currentPing = '--';
 let currentJitter = '--';
 let speedHistory = [];
@@ -34,6 +35,9 @@ function formatSpeedForDisplay(speedString, rawSpeed) {
 function updateSpeedDisplay(speedData) {
   const speedElement = document.getElementById('speed');
   const unitElement = document.getElementById('unit');
+  const uploadSpeedElement = document.getElementById('upload-speed');
+  const uploadUnitElement = document.getElementById('upload-unit');
+  const uploadContainer = document.getElementById('upload-container');
   const pingElement = document.getElementById('ping');
   const pingUnitElement = document.getElementById('ping-unit');
   const jitterElement = document.getElementById('jitter');
@@ -43,6 +47,7 @@ function updateSpeedDisplay(speedData) {
     console.error('Failed to retrieve speed data.');
     speedElement.innerText = '--';
     unitElement.innerText = 'Mbps';
+    if (uploadSpeedElement) uploadSpeedElement.innerText = '--';
     if (pingElement) pingElement.innerText = '--';
     if (jitterElement) jitterElement.innerText = '--';
     if (statusElement) statusElement.innerText = 'Connection Error';
@@ -50,6 +55,7 @@ function updateSpeedDisplay(speedData) {
   }
 
   currentSpeed = speedData.speed;
+  currentUpload = speedData.upload != null ? speedData.upload : '--';
   currentPing = speedData.ping != null ? speedData.ping : '--';
   currentJitter = speedData.jitter != null ? speedData.jitter : '--';
   speedHistory = speedData.history || [];
@@ -61,39 +67,39 @@ function updateSpeedDisplay(speedData) {
   speedElement.classList.remove('loading-text', 'error-text');
   const speedContainer = document.getElementById('speed-container');
   if (speedContainer) speedContainer.classList.remove('error-unit');
+  if (uploadContainer) uploadContainer.classList.remove('error-unit');
   if (pingElement) pingElement.classList.remove('error-ping');
   if (jitterElement) jitterElement.classList.remove('error-ping');
 
   if (formatted.isOffline) {
     speedElement.classList.add('error-text');
     if (speedContainer) speedContainer.classList.add('error-unit');
-    if (pingElement) pingElement.classList.add('error-ping');
-    if (jitterElement) jitterElement.classList.add('error-ping');
     speedElement.innerText = formatted.display;
     unitElement.innerText = formatted.unit;
-    if (pingElement) pingElement.innerText = '--';
-    if (jitterElement) jitterElement.innerText = '--';
+    if (uploadSpeedElement) uploadSpeedElement.innerText = '--';
+    if (pingElement) { pingElement.classList.add('error-ping'); pingElement.innerText = '--'; }
+    if (jitterElement) { jitterElement.classList.add('error-ping'); jitterElement.innerText = '--'; }
   } else if (formatted.isError) {
     speedElement.classList.add('error-text');
     if (speedContainer) speedContainer.classList.add('error-unit');
-    if (pingElement) pingElement.classList.add('error-ping');
-    if (jitterElement) jitterElement.classList.add('error-ping');
     speedElement.innerText = 'Error';
     unitElement.innerText = 'Connection Failed';
-    if (pingElement) pingElement.innerText = '--';
-    if (jitterElement) jitterElement.innerText = '--';
+    if (uploadSpeedElement) uploadSpeedElement.innerText = '--';
+    if (pingElement) { pingElement.classList.add('error-ping'); pingElement.innerText = '--'; }
+    if (jitterElement) { jitterElement.classList.add('error-ping'); jitterElement.innerText = '--'; }
   } else if (isTestingInProgress) {
     speedElement.classList.add('loading-text');
     speedElement.innerText = formatted.display;
     unitElement.innerText = formatted.unit;
+    if (uploadSpeedElement) uploadSpeedElement.innerText = currentUpload;
     if (pingElement) pingElement.innerText = currentPing;
     if (jitterElement) jitterElement.innerText = currentJitter;
-    // Clear inline styles that interfere with animation
     speedElement.style.transform = '';
     speedElement.style.opacity = '';
   } else {
     speedElement.innerText = formatted.display;
     unitElement.innerText = formatted.unit;
+    if (uploadSpeedElement) uploadSpeedElement.innerText = currentUpload;
     if (pingElement) pingElement.innerText = currentPing;
     if (jitterElement) jitterElement.innerText = currentJitter;
   }
@@ -122,7 +128,7 @@ function updateSpeedDisplay(speedData) {
   // Trigger animation only when not testing
   if (!isTestingInProgress) {
     const statsRow = document.getElementById('ping-container');
-    [speedContainer, statsRow].forEach((el) => {
+    [speedContainer, uploadContainer, statsRow].forEach((el) => {
       if (el) {
         el.style.opacity = '1';
         el.style.transform = 'translateY(0)';
@@ -225,9 +231,10 @@ document.body.addEventListener('click', (e) => {
   if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
 
   const speedContainer = document.getElementById('speed-container');
+  const uploadContainer = document.getElementById('upload-container');
   const statsRow = document.getElementById('ping-container');
 
-  [speedContainer, statsRow].forEach((el) => {
+  [speedContainer, uploadContainer, statsRow].forEach((el) => {
     if (el) {
       el.style.opacity = '0';
       el.style.transform = 'translateY(8px)';
