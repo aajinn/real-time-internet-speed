@@ -1,445 +1,360 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Internet Speed Monitor</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            width: 260px;
+            background: #0f1117;
+            color: #fff;
+            overflow: hidden;
         }
 
         #main {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
+            width: 100%;
+            min-height: 280px;
+            background: #0f1117;
+            position: relative;
+        }
+
+        /* Top bar */
+        .top-bar {
+            display: flex;
             align-items: center;
-            justify-content: center;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(135deg, #63656e 0%, #9d8ead 100%);
+            justify-content: space-between;
+            padding: 10px 14px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .app-title {
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.35);
+        }
+
+        #pin-btn {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.5);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.6rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #pin-btn:hover {
+            background: rgba(255,255,255,0.12);
             color: #fff;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* Speed hero */
+        .speed-hero {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            width: 100vw;
-            height: 100vh;
-            background: #f5f7fa;
-            color: #333;
+            padding: 18px 0 14px;
             position: relative;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
         }
 
+        .speed-label {
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+            margin-bottom: 4px;
+        }
 
         #speed-container {
             display: flex;
             align-items: baseline;
-            justify-content: center;
-            gap: 6px;
+            gap: 5px;
             opacity: 0;
-            transform: translateY(-20px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
-            z-index: 1;
-            margin-bottom: 60px;
+            transform: translateY(8px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
         }
 
         #speed {
-            font-size: 3.2rem;
+            font-size: 3.6rem;
             font-weight: 700;
-            color: #fff;
-            animation: pulse 0.6s ease-in-out;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             line-height: 1;
+            color: #fff;
+            letter-spacing: -2px;
         }
 
         #unit {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.4);
             font-weight: 400;
-            align-self: flex-end;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
-        #ping-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
-            z-index: 1;
-            margin-bottom: 5px;
-            margin-top: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 4px 12px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .ping-icon {
-            font-size: 0.9rem;
-            margin-right: 2px;
-        }
-
-        #ping {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #ffd700;
-        }
-
-        #ping-unit {
-            font-size: 0.8rem;
-            color: rgba(255, 255, 255, 0.8);
-            font-weight: 500;
-        }
-
-        #status {
-            font-size: 0.75rem;
-            opacity: 0.7;
-            z-index: 1;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-
-        .status-normal {
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .status-testing {
-            color: #ffd700;
-            font-weight: 500;
-        }
-
-        .status-error {
-            color: #ff6b6b;
-            font-weight: 500;
-        }
-
-        #testButton {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            z-index: 1;
-            margin-bottom: 8px;
-            backdrop-filter: blur(10px);
-        }
-
-        #testButton:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        #testButton:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
+        /* Graph */
         #speedGraphContainer {
-            width: 80%;
-            height: 30px;
-            margin-bottom: 5px;
-            z-index: 1;
+            width: 100%;
+            height: 36px;
+            padding: 0 14px;
+            margin-bottom: 2px;
         }
 
         .speed-graph {
             display: flex;
-            align-items: end;
+            align-items: flex-end;
             height: 100%;
-            gap: 2px;
-            justify-content: center;
+            gap: 3px;
         }
 
         .graph-bar {
-            background: rgba(255, 255, 255, 0.6);
-            width: 8px;
-            min-height: 4px;
-            border-radius: 1px;
-            transition: height 0.5s ease;
+            flex: 1;
+            min-height: 3px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 2px 2px 0 0;
+            transition: height 0.4s ease, background 0.3s;
         }
 
-        #footer {
-            font-size: 0.7rem;
-            color: rgba(255, 255, 255, 0.8);
-            z-index: 10;
-            background: rgba(0, 0, 0, 0.1);
-            padding: 6px 12px;
-            border-radius: 8px 8px 0px 0px;
-            width: 90%;
-            text-align: center;
-            position: absolute;
-            bottom: 0px;
-            backdrop-filter: blur(10px);
+        .graph-bar:last-child { background: rgba(99,179,237,0.7); }
+
+        /* Stats row: ping + jitter */
+        .stats-row {
+            display: flex;
+            gap: 8px;
+            padding: 10px 14px;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
         }
 
-        #footer a {
-            color: #ffd700;
-            text-decoration: none;
-            transition: color 0.3s;
+        .stat-card {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .stat-label {
+            font-size: 0.55rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .stat-value-row {
+            display: flex;
+            flex-direction: row;
+            align-items: baseline;
+            gap: 3px;
+        }
+
+        #ping {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fbbf24;
+            line-height: 1;
+        }
+
+        #jitter {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #60a5fa;
+            line-height: 1;
+        }
+
+        .stat-unit {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.3);
             font-weight: 500;
         }
 
-        #footer a:hover {
-            color: #ffed4e;
-            text-decoration: underline;
+        /* Bottom bar */
+        .bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px 10px;
+            border-top: 1px solid rgba(255,255,255,0.06);
         }
 
+        #status {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.3);
+        }
+
+        .status-testing { color: #fbbf24 !important; }
+        .status-error   { color: #f87171 !important; }
+        .status-normal  { color: rgba(255,255,255,0.3); }
+
+        #testButton {
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.7);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #testButton:hover {
+            background: rgba(255,255,255,0.14);
+            color: #fff;
+        }
+        #testButton:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Error / loading states */
         .loading-text {
-            color: #ffd700 !important;
+            color: #fbbf24 !important;
             animation: blinkPop 1.2s infinite ease-in-out !important;
-            transition: none !important;
         }
-
-        .error-text {
-            color: #ff6b6b !important;
-            font-size: 1.5rem !important;
-        }
-
-        .error-unit {
-            color: #ff6b6b !important;
-            font-size: 0.8rem !important;
-        }
-
-        .error-ping {
-            color: #ff6b6b !important;
-        }
-
-        .handshake:hover {
-            font-size: 1.2rem;
-            transition: all 300ms ease-in-out;
-        }
-
-        /* Animations */
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.05);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        @keyframes blink {
-            0%, 50% {
-                opacity: 1;
-            }
-            51%, 100% {
-                opacity: 0.5;
-            }
-        }
+        .error-text  { color: #f87171 !important; font-size: 2rem !important; letter-spacing: 0 !important; }
+        .error-unit  { color: #f87171 !important; }
+        .error-ping  { color: #f87171 !important; }
 
         @keyframes blinkPop {
-            0% {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-            25% {
-                opacity: 0.7;
-                transform: scale(1.05) translateY(-3px);
-            }
-            50% {
-                opacity: 0.4;
-                transform: scale(1.1) translateY(-5px);
-            }
-            75% {
-                opacity: 0.7;
-                transform: scale(1.05) translateY(-3px);
-            }
-            100% {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
+            0%,100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.5; transform: scale(1.04); }
         }
 
-
-
-        /* Responsive adjustments */
-        @media (max-width: 220px) {
-
-            #main,
-            body {
-                width: 180px;
-                height: 225px;
-            }
-
-            #speed {
-                font-size: 2.8rem;
-            }
-        }
-    </style>
-    <style>
+        /* Rating div */
         #ratingDiv {
+            display: none;
             width: 100%;
-            background: linear-gradient(135deg, #63656e 0%, #9d8ead 100%);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            padding: 20px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f1117;
+            padding: 24px 20px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             color: white;
-            display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
             text-align: center;
+            gap: 10px;
         }
 
         #ratingDiv h3 {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
-            margin: 0;
-            padding: 0%;
-            margin-bottom: 10px;
-            margin-top: 10px;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            white-space: nowrap;
+            color: #fff;
         }
 
         #ratingDiv p {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 18px;
-            line-height: 1.4;
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.5;
         }
 
         #ratingDiv a {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255,255,255,0.08);
             color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 7px 16px;
+            border-radius: 8px;
             text-decoration: none;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
-            margin-bottom: 10px;
-            display: inline-block;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.12);
+            transition: all 0.2s;
         }
-
-        #ratingDiv a:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
+        #ratingDiv a:hover { background: rgba(255,255,255,0.14); }
 
         #ratingDiv button {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: rgba(255, 255, 255, 0.8);
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.35);
             font-size: 11px;
             cursor: pointer;
-            margin: 3px;
-            padding: 4px 8px;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
+            padding: 2px 6px;
+            transition: color 0.2s;
         }
+        #ratingDiv button:hover { color: rgba(255,255,255,0.7); }
 
-        #dismiss-btn {
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
+        /* Footer */
+        #footer {
+            text-align: center;
+            padding: 6px 14px 8px;
+            font-size: 0.6rem;
+            color: rgba(255,255,255,0.2);
+            border-top: 1px solid rgba(255,255,255,0.06);
         }
-
-        #ratingDiv button:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            transform: translateY(-1px);
+        #footer a {
+            color: rgba(255,255,255,0.35);
+            text-decoration: none;
+            transition: color 0.2s;
         }
-
-        #pin-btn {
-    
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.65rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-            z-index: 15;
-            font-weight: 500;
-            min-width: auto;
-        }
-
-        #pin-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
+        #footer a:hover { color: rgba(255,255,255,0.7); }
     </style>
 </head>
-
 <body>
     <div id="main">
-        <button id="pin-btn" title="Pin extension to toolbar">📌 Pin</button>
-        <div class="bg-animation"></div>
-        <div id="ping-container">
-            <span class="ping-icon">📡</span>
-            <span id="ping">--</span>
-            <span id="ping-unit">ms</span>
+        <div class="top-bar">
+            <span class="app-title">Speed Monitor</span>
+            <button id="pin-btn" title="Pin extension to toolbar">📌 Pin</button>
         </div>
+
+        <div class="speed-hero">
+            <span class="speed-label">Download</span>
+            <div id="speed-container">
+                <span id="speed">0.00</span>
+                <span id="unit">Mbps</span>
+            </div>
+        </div>
+
         <div id="speedGraphContainer"></div>
-        <div id="speed-container">
-            <span id="speed">0.00</span>
-            <span id="unit">Mbps</span>
+
+        <div class="stats-row" id="ping-container">
+            <div class="stat-card">
+                <span class="stat-label">Ping</span>
+                <div class="stat-value-row">
+                    <span id="ping">--</span>
+                    <span class="stat-unit" id="ping-unit">ms</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Jitter</span>
+                <div class="stat-value-row">
+                    <span id="jitter">--</span>
+                    <span class="stat-unit" id="jitter-unit">ms</span>
+                </div>
+            </div>
         </div>
 
-
-
+        <div class="bottom-bar">
+            <span id="status" class="status-normal">Waiting...</span>
+            <button id="testButton">Test Now</button>
+        </div>
 
         <div id="footer">
-            <a target="_blank"
-                href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews">
-                Rate Us ⭐
-            </a>
-            <br>
             Made by <a target="_blank" href="https://ared.dev">Ared</a>
-            <br>
-            <span style="font-size: 0.6rem; opacity: 0.6;">v2.7.0</span>
+            &nbsp;·&nbsp;
+            <a target="_blank" href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews">Rate ⭐</a>
+            &nbsp;·&nbsp;
+            <span>v2.7.0</span>
         </div>
     </div>
 
     <div id="ratingDiv">
-        <h3>🌟 Enjoying our extension?</h3>
-        <p>Help us improve by rating us on the Chrome Web Store!</p>
+        <h3>🌟 Enjoying the extension?</h3>
+        <p>Help us improve by rating on the Chrome Web Store!</p>
         <a href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews"
-            target="_blank" rel="noopener noreferrer">
-            ⭐ Rate Now
-        </a>
-        <button id="dismiss-btn">Maybe Later</button>
-        <button id="disable-rating-btn">Don't Show Again</button>
+            target="_blank" rel="noopener noreferrer">⭐ Rate Now</a>
+        <div>
+            <button id="dismiss-btn">Maybe Later</button>
+            <button id="disable-rating-btn">Don't Show Again</button>
+        </div>
     </div>
 
     <script src="popup.js"></script>
 </body>
-
 </html>

@@ -1,5 +1,6 @@
 let currentSpeed = '--';
 let currentPing = '--';
+let currentJitter = '--';
 let speedHistory = [];
 let isTestingInProgress = false;
 
@@ -35,6 +36,7 @@ function updateSpeedDisplay(speedData) {
   const unitElement = document.getElementById('unit');
   const pingElement = document.getElementById('ping');
   const pingUnitElement = document.getElementById('ping-unit');
+  const jitterElement = document.getElementById('jitter');
   const statusElement = document.getElementById('status');
 
   if (!speedData || !speedData.speed) {
@@ -42,12 +44,14 @@ function updateSpeedDisplay(speedData) {
     speedElement.innerText = '--';
     unitElement.innerText = 'Mbps';
     if (pingElement) pingElement.innerText = '--';
+    if (jitterElement) jitterElement.innerText = '--';
     if (statusElement) statusElement.innerText = 'Connection Error';
     return;
   }
 
   currentSpeed = speedData.speed;
-  currentPing = speedData.ping || '--';
+  currentPing = speedData.ping != null ? speedData.ping : '--';
+  currentJitter = speedData.jitter != null ? speedData.jitter : '--';
   speedHistory = speedData.history || [];
   isTestingInProgress = speedData.isTestingInProgress || false;
 
@@ -58,26 +62,32 @@ function updateSpeedDisplay(speedData) {
   const speedContainer = document.getElementById('speed-container');
   if (speedContainer) speedContainer.classList.remove('error-unit');
   if (pingElement) pingElement.classList.remove('error-ping');
+  if (jitterElement) jitterElement.classList.remove('error-ping');
 
   if (formatted.isOffline) {
     speedElement.classList.add('error-text');
     if (speedContainer) speedContainer.classList.add('error-unit');
     if (pingElement) pingElement.classList.add('error-ping');
+    if (jitterElement) jitterElement.classList.add('error-ping');
     speedElement.innerText = formatted.display;
     unitElement.innerText = formatted.unit;
     if (pingElement) pingElement.innerText = '--';
+    if (jitterElement) jitterElement.innerText = '--';
   } else if (formatted.isError) {
     speedElement.classList.add('error-text');
     if (speedContainer) speedContainer.classList.add('error-unit');
     if (pingElement) pingElement.classList.add('error-ping');
+    if (jitterElement) jitterElement.classList.add('error-ping');
     speedElement.innerText = 'Error';
     unitElement.innerText = 'Connection Failed';
     if (pingElement) pingElement.innerText = '--';
+    if (jitterElement) jitterElement.innerText = '--';
   } else if (isTestingInProgress) {
     speedElement.classList.add('loading-text');
     speedElement.innerText = formatted.display;
     unitElement.innerText = formatted.unit;
     if (pingElement) pingElement.innerText = currentPing;
+    if (jitterElement) jitterElement.innerText = currentJitter;
     // Clear inline styles that interfere with animation
     speedElement.style.transform = '';
     speedElement.style.opacity = '';
@@ -85,6 +95,7 @@ function updateSpeedDisplay(speedData) {
     speedElement.innerText = formatted.display;
     unitElement.innerText = formatted.unit;
     if (pingElement) pingElement.innerText = currentPing;
+    if (jitterElement) jitterElement.innerText = currentJitter;
   }
 
   // Update status
@@ -110,11 +121,8 @@ function updateSpeedDisplay(speedData) {
 
   // Trigger animation only when not testing
   if (!isTestingInProgress) {
-    const elementsToAnimate = [speedContainer];
-    const pingContainer = document.getElementById('ping-container');
-    if (pingContainer) elementsToAnimate.push(pingContainer);
-    
-    elementsToAnimate.forEach((el) => {
+    const statsRow = document.getElementById('ping-container');
+    [speedContainer, statsRow].forEach((el) => {
       if (el) {
         el.style.opacity = '1';
         el.style.transform = 'translateY(0)';
@@ -132,13 +140,14 @@ function updateSpeedGraph() {
   const minSpeed = Math.min(...historyArray);
   const range = maxSpeed - minSpeed || 1;
 
-  // Create simple ASCII-like graph
-  const bars = historyArray.map(speed => {
-    const percentage = ((speed - minSpeed) / range) * 100;
-    return `<div class="graph-bar" style="height: ${Math.max(10, percentage)}%"></div>`;
-  }).join('');
-
-  graphElement.innerHTML = bars;
+  graphElement.replaceChildren(
+    ...historyArray.map(speed => {
+      const bar = document.createElement('div');
+      bar.className = 'graph-bar';
+      bar.style.height = Math.max(10, ((speed - minSpeed) / range) * 100) + '%';
+      return bar;
+    })
+  );
 }
 
 function updateSpeed() {
@@ -179,24 +188,19 @@ updateSpeed(); // Initial request
 
 // Add jump-in effect on main area click
 document.body.addEventListener('click', (e) => {
-  // Don't trigger animation if clicking on buttons
-  if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') {
-    return;
-  }
+  if (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
 
   const speedContainer = document.getElementById('speed-container');
-  const pingContainer = document.getElementById('ping-container');
+  const statsRow = document.getElementById('ping-container');
 
-  const elementsToAnimate = [];
-  if (speedContainer) elementsToAnimate.push(speedContainer);
-  if (pingContainer) elementsToAnimate.push(pingContainer);
-
-  elementsToAnimate.forEach((el) => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(-20px)';
+  [speedContainer, statsRow].forEach((el) => {
+    if (el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(8px)';
+    }
   });
 
-  setTimeout(updateSpeed, 300); // Wait for animation to finish
+  setTimeout(updateSpeed, 300);
 });
 
 // Initialize advanced features when DOM is loaded

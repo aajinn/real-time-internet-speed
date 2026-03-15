@@ -1,5 +1,6 @@
 let latestSpeed = '--';
 let latestPing = '--';
+let latestJitter = '--';
 let isTestingInProgress = false;
 class RequestQueue {
   constructor(maxConcurrent = 2) {
@@ -169,44 +170,40 @@ function formatSpeed(speedMbps) {
 }
 
 async function measurePing() {
-  const results = [];
-  
-  const pingPromises = PING_ENDPOINTS.slice(0, 2).map(endpoint => 
-    requestQueue.add(async () => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
-      
-      try {
-        const start = performance.now();
-        const response = await fetch(endpoint + '?t=' + Date.now(), {
-          method: 'HEAD',
-          cache: 'no-store',
-          signal: controller.signal,
-          keepalive: true
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (response.ok) {
-          const ping = Math.round(performance.now() - start);
-          return ping > 0 && ping < 5000 ? ping : null;
-        }
-        return null;
-      } catch (error) {
-        clearTimeout(timeoutId);
-        return null;
-      }
-    }).catch(() => null)
-  );
-  
-  const pingResults = await Promise.allSettled(pingPromises);
-  pingResults.forEach(result => {
-    if (result.status === 'fulfilled' && result.value) {
-      results.push(result.value);
+  const samples = [];
+  const endpoints = [
+    'https://speed.cloudflare.com/__down?bytes=0',
+    'https://www.google.com/generate_204'
+  ];
+
+  for (let i = 0; i < 4; i++) {
+    const endpoint = endpoints[i % endpoints.length];
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    try {
+      const start = performance.now();
+      const res = await fetch(endpoint + (endpoint.includes('?') ? '&' : '?') + 't=' + Date.now(), {
+        cache: 'no-store',
+        signal: controller.signal
+      });
+      await res.arrayBuffer();
+      clearTimeout(timeoutId);
+      const ping = Math.round(performance.now() - start);
+      if (ping > 0 && ping < 5000) samples.push(ping);
+    } catch (e) {
+      clearTimeout(timeoutId);
+      console.warn('Ping sample failed:', e && e.message);
     }
-  });
-  
-  return results.length > 0 ? Math.round(results.reduce((a, b) => a + b) / results.length) : null;
+  }
+
+  if (samples.length === 0) return { ping: null, jitter: null };
+
+  const avgPing = Math.round(samples.reduce((a, b) => a + b) / samples.length);
+  const jitter = samples.length >= 2
+    ? Math.round(samples.slice(1).reduce((sum, v, i) => sum + Math.abs(v - samples[i]), 0) / (samples.length - 1))
+    : 0;
+
+  return { ping: avgPing, jitter };
 }
 
 async function testSingleFile(testFile, timeout = 15000) {
@@ -345,9 +342,10 @@ async function performSpeedTest() {
     addToHistory(smoothedSpeed);
     latestSpeed = formatSpeed(smoothedSpeed);
 
-    // Measure ping
-    const ping = await measurePing();
+    // Measure ping + jitter
+    const { ping, jitter } = await measurePing();
     latestPing = ping !== null ? ping.toString() : '--';
+    latestJitter = jitter !== null ? jitter.toString() : '--';
 
     // Update badge with appropriate text
     const badgeText = smoothedSpeed >= 1 ?
@@ -356,16 +354,15 @@ async function performSpeedTest() {
 
     chrome.action.setBadgeText({ text: badgeText });
     chrome.action.setBadgeBackgroundColor({ color: '#0058cc' });
-
-    console.log(`Speed test completed: ${latestSpeed} (${allSpeeds.length} samples)`);
+    isTestingInProgress = false;
 
   } catch (error) {
     console.error('Speed test failed:', error);
     latestSpeed = 'Err';
     latestPing = 'Err';
+    latestJitter = 'Err';
     chrome.action.setBadgeText({ text: 'Err' });
     chrome.action.setBadgeBackgroundColor({ color: '#ff4444' });
-  } finally {
     isTestingInProgress = false;
   }
 }
@@ -412,12 +409,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({
       speed: latestSpeed,
       ping: latestPing,
-      history: speedHistory.slice(-5), // Send recent history
+      jitter: latestJitter,
+      history: speedHistory.slice(-5),
       isTestingInProgress
     });
   } else if (message.type === 'forceTest') {
     performSpeedTest().then(() => {
-      sendResponse({ speed: latestSpeed, ping: latestPing });
+      sendResponse({ speed: latestSpeed, ping: latestPing, jitter: latestJitter });
     }).catch(error => {
       console.error('Force test failed:', error);
       sendResponse({ speed: 'Err', ping: 'Err' });
