@@ -410,7 +410,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       speed: latestSpeed,
       ping: latestPing,
       jitter: latestJitter,
-      history: speedHistory.slice(-5),
+      history: speedHistory.slice(-10),
       isTestingInProgress
     });
   } else if (message.type === 'forceTest') {

@@ -132,22 +132,56 @@ function updateSpeedDisplay(speedData) {
 }
 
 function updateSpeedGraph() {
-  const graphElement = document.getElementById('speedGraph');
-  if (!graphElement || !speedHistory || speedHistory.length === 0) return;
+  const svg = document.getElementById('speedChart');
+  if (!svg || !speedHistory || speedHistory.length < 2) return;
 
-  const historyArray = Array.isArray(speedHistory) ? speedHistory : speedHistory.slice(-8);
-  const maxSpeed = Math.max(...historyArray);
-  const minSpeed = Math.min(...historyArray);
-  const range = maxSpeed - minSpeed || 1;
+  const data = Array.isArray(speedHistory) ? speedHistory : speedHistory.slice(-10);
+  const W = 232, H = 80, PAD = { top: 10, bottom: 18, left: 28, right: 6 };
+  const iW = W - PAD.left - PAD.right;
+  const iH = H - PAD.top - PAD.bottom;
 
-  graphElement.replaceChildren(
-    ...historyArray.map(speed => {
-      const bar = document.createElement('div');
-      bar.className = 'graph-bar';
-      bar.style.height = Math.max(10, ((speed - minSpeed) / range) * 100) + '%';
-      return bar;
-    })
-  );
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+
+  const xStep = iW / (data.length - 1);
+  const toX = i => PAD.left + i * xStep;
+  const toY = v => PAD.top + iH - ((v - min) / range) * iH;
+
+  const pts = data.map((v, i) => `${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(' ');
+  const lastX = toX(data.length - 1).toFixed(1);
+  const lastY = toY(data[data.length - 1]).toFixed(1);
+  const baseY = PAD.top + iH;
+  const fillPts = `${PAD.left},${baseY} ${pts} ${lastX},${baseY}`;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs) => {
+    const e = document.createElementNS(ns, tag);
+    Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    return e;
+  };
+
+  const gradId = 'chartGrad';
+  const defs = el('defs', {});
+  const grad = el('linearGradient', { id: gradId, x1: '0', y1: '0', x2: '0', y2: '1' });
+  const s1 = el('stop', { offset: '0%', 'stop-color': '#ffd700', 'stop-opacity': '0.3' });
+  const s2 = el('stop', { offset: '100%', 'stop-color': '#ffd700', 'stop-opacity': '0' });
+  grad.append(s1, s2);
+  defs.append(grad);
+
+  const fill = el('polygon', { points: fillPts, fill: `url(#${gradId})` });
+  const line = el('polyline', { points: pts, fill: 'none', stroke: '#ffd700', 'stroke-width': '1.5', 'stroke-linejoin': 'round', 'stroke-linecap': 'round' });
+  const dot = el('circle', { cx: lastX, cy: lastY, r: '3', fill: '#ffd700' });
+
+  const fmt = v => v >= 100 ? v.toFixed(0) : v >= 1 ? v.toFixed(1) : (v * 1000).toFixed(0) + 'K';
+  const labelMax = el('text', { x: '0', y: (PAD.top + 4).toFixed(1), class: 'chart-label', 'text-anchor': 'start' });
+  labelMax.textContent = fmt(max);
+  const labelMin = el('text', { x: '0', y: (H - 4).toFixed(1), class: 'chart-label', 'text-anchor': 'start' });
+  labelMin.textContent = fmt(min);
+
+  const baseline = el('line', { x1: PAD.left, y1: baseY, x2: W - PAD.right, y2: baseY, stroke: 'rgba(255,255,255,0.15)', 'stroke-width': '1' });
+
+  svg.replaceChildren(defs, baseline, fill, line, dot, labelMax, labelMin);
 }
 
 function updateSpeed() {
@@ -220,8 +254,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Add speed graph
   const graphContainer = document.getElementById('speedGraphContainer');
-  if (graphContainer) {
-    graphContainer.innerHTML = '<div id="speedGraph" class="speed-graph"></div>';
+  if (graphContainer && !document.getElementById('speedChart')) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.id = 'speedChart';
+    svg.setAttribute('viewBox', '0 0 232 80');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.style.cssText = 'width:100%;height:80px;display:block;overflow:visible';
+    graphContainer.appendChild(svg);
   }
 
   // Handle rating system
