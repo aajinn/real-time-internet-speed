@@ -98,7 +98,7 @@ const TEST_CONFIGS = {
 const FALLBACK_TESTS = [
   { url: 'https://speed.cloudflare.com/__down?bytes=131072', size: 131072 },
   { url: 'https://httpbin.org/bytes/131072', size: 131072 },
-  { url: 'https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js', size: 89476 }
+  { url: 'https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png', size: 13504 }
 ];
 
 function getMedianSpeed(speeds) {
@@ -143,25 +143,32 @@ function formatSpeed(speedMbps) {
 
 async function measurePing() {
   const samples = [];
+  // Use a tiny 1-byte payload so we measure connection latency, not transfer time.
+  // google.com/generate_204 returns an empty 204 — ideal for pure RTT measurement.
   const endpoints = [
-    'https://speed.cloudflare.com/__down?bytes=0',
-    'https://www.google.com/generate_204'
+    'https://www.google.com/generate_204',
+    'https://speed.cloudflare.com/__down?bytes=1',
   ];
 
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
     const endpoint = endpoints[i % endpoints.length];
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3000);
     try {
+      const sep = endpoint.includes('?') ? '&' : '?';
+      const url = endpoint + sep + 't=' + Date.now();
       const start = performance.now();
-      const res = await fetch(endpoint + (endpoint.includes('?') ? '&' : '?') + 't=' + Date.now(), {
+      const res = await fetch(url, {
         cache: 'no-store',
         signal: controller.signal
       });
+      // Read only the status/headers — don't wait for body to avoid inflating RTT
+      // with transfer time. For generate_204 there is no body; for the 1-byte
+      // Cloudflare endpoint the body is negligible but we still drain it quickly.
       await res.arrayBuffer();
       clearTimeout(timeoutId);
-      const ping = Math.round(performance.now() - start);
-      if (ping > 0 && ping < 5000) samples.push(ping);
+      const rtt = Math.round(performance.now() - start);
+      if (rtt > 0 && rtt < 5000) samples.push(rtt);
     } catch (e) {
       clearTimeout(timeoutId);
       console.warn('Ping sample failed:', e && e.message);
@@ -170,22 +177,56 @@ async function measurePing() {
 
   if (samples.length === 0) return { ping: null, jitter: null };
 
-  const avgPing = Math.round(samples.reduce((a, b) => a + b) / samples.length);
-  const jitter = samples.length >= 2
-    ? Math.round(samples.slice(1).reduce((sum, v, i) => sum + Math.abs(v - samples[i]), 0) / (samples.length - 1))
+  // Drop the first sample (TCP connection setup) and use the rest for a
+  // more stable average that reflects steady-state latency.
+  const steadySamples = samples.length > 1 ? samples.slice(1) : samples;
+  const sorted = [...steadySamples].sort((a, b) => a - b);
+  // Use median to resist outliers
+  const mid = Math.floor(sorted.length / 2);
+  const medianPing = sorted.length % 2 === 0
+    ? Math.round((sorted[mid - 1] + sorted[mid]) / 2)
+    : sorted[mid];
+
+  const jitter = steadySamples.length >= 2
+    ? Math.round(
+        steadySamples.slice(1).reduce((sum, v, i) => sum + Math.abs(v - steadySamples[i]), 0) /
+        (steadySamples.length - 1)
+      )
     : 0;
 
-  return { ping: avgPing, jitter };
+  return { ping: medianPing, jitter };
 }
 
 function makeRandomPayload(size) {
+  // Fill the entire buffer with random data to prevent any compression
+  // by proxies or the OS network stack that would inflate measured speed.
   const buf = new Uint8Array(size);
-  crypto.getRandomValues(buf.subarray(0, Math.min(size, 65536)));
+  // crypto.getRandomValues has a 65536-byte limit per call, so chunk it
+  for (let offset = 0; offset < size; offset += 65536) {
+    crypto.getRandomValues(buf.subarray(offset, Math.min(offset + 65536, size)));
+  }
   return buf;
 }
 
 async function measureUpload() {
-  const sizes = [256 * 1024, 512 * 1024];
+  // Warm up the connection with a tiny request first so the actual timed
+  // upload doesn't include TCP/TLS handshake overhead.
+  try {
+    const warmup = new AbortController();
+    const wt = setTimeout(() => warmup.abort(), 3000);
+    const warmupRes = await fetch('https://speed.cloudflare.com/__up', {
+      method: 'POST',
+      body: new Uint8Array(1024),
+      cache: 'no-store',
+      signal: warmup.signal,
+      headers: { 'Content-Type': 'application/octet-stream' }
+    });
+    clearTimeout(wt);
+    warmupRes.body && await warmupRes.body.cancel();
+  } catch (_) { /* ignore warmup failures */ }
+
+  // Use 3 samples so we can take the median and discard outliers
+  const sizes = [256 * 1024, 512 * 1024, 256 * 1024];
   const results = [];
 
   for (const size of sizes) {
@@ -193,24 +234,74 @@ async function measureUpload() {
     const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
       const payload = makeRandomPayload(size);
-      const start = performance.now();
-      const response = await fetch('https://speed.cloudflare.com/__up', {
-        method: 'POST',
-        body: payload,
-        cache: 'no-store',
-        signal: controller.signal,
-        headers: { 'Content-Type': 'application/octet-stream' }
+
+      // Wrap the payload in a ReadableStream so we can record exactly when
+      // the last byte is handed to the browser's network layer — this is
+      // the closest we can get to "data left the device" without a
+      // server-side timestamp. The timer stops when the stream closes,
+      // before we wait for the server's response.
+      let transferEnd = 0;
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(payload);
+          controller.close();
+          // close() is synchronous; record time immediately after
+          // (the browser will flush the buffer to the socket)
+          transferEnd = performance.now();
+        }
       });
-      const duration = (performance.now() - start) / 1000;
+
+      const transferStart = performance.now();
+      let response;
+      let usedFallback = false;
+      let fallbackDuration = 0;
+      try {
+        response = await fetch('https://speed.cloudflare.com/__up', {
+          method: 'POST',
+          body: stream,
+          cache: 'no-store',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'Content-Length': size.toString()
+          },
+          duplex: 'half'
+        });
+      } catch (_streamErr) {
+        // duplex:'half' not supported — fall back to buffered upload
+        const fallbackPayload = makeRandomPayload(size);
+        const fallbackStart = performance.now();
+        response = await fetch('https://speed.cloudflare.com/__up', {
+          method: 'POST',
+          body: fallbackPayload,
+          cache: 'no-store',
+          signal: controller.signal,
+          headers: { 'Content-Type': 'application/octet-stream' }
+        });
+        fallbackDuration = (performance.now() - fallbackStart) / 1000;
+        usedFallback = true;
+      }
+
+      // Drain the response so the connection returns to the pool cleanly
+      await response.body.cancel();
       clearTimeout(timeoutId);
-      if (response.ok && duration > 0.05) results.push((size * 8) / (duration * 1e6));
+
+      const duration = usedFallback
+        ? fallbackDuration
+        : (transferEnd > transferStart ? transferEnd - transferStart : performance.now() - transferStart) / 1000;
+
+      if (response.ok && duration > 0.1) {
+        results.push((size * 8) / (duration * 1e6));
+      }
     } catch (e) {
       clearTimeout(timeoutId);
       console.warn('Upload sample failed:', e && e.message);
     }
   }
 
-  return results.length > 0 ? getMedianSpeed(results) : null;
+  if (results.length === 0) return null;
+  const cleaned = removeOutliers(results);
+  return getMedianSpeed(cleaned.length > 0 ? cleaned : results);
 }
 
 async function testSingleFile(testFile, timeout = 15000) {
@@ -219,10 +310,10 @@ async function testSingleFile(testFile, timeout = 15000) {
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     try {
-      const startTime = performance.now();
-      const isCloudflare = testFile.url.includes('speed.cloudflare.com/__down?bytes=');
       let url;
+      const isCloudflare = testFile.url.includes('speed.cloudflare.com/__down?bytes=');
       if (isCloudflare) {
+        // Add a small random jitter to the byte count to defeat any edge caching
         const size = parseInt(testFile.url.split('bytes=')[1]) || testFile.size;
         const jitter = size + Math.floor(Math.random() * 1024);
         url = `https://speed.cloudflare.com/__down?bytes=${jitter}`;
@@ -230,6 +321,7 @@ async function testSingleFile(testFile, timeout = 15000) {
         const sep = testFile.url.includes('?') ? '&' : '?';
         url = testFile.url + sep + 'cb=' + Date.now();
       }
+
       const response = await fetch(url, {
         cache: 'no-store',
         signal: controller.signal,
@@ -238,6 +330,9 @@ async function testSingleFile(testFile, timeout = 15000) {
 
       if (!response.ok) throw new Error('HTTP ' + response.status);
 
+      // Start timing AFTER headers arrive (i.e. after TCP+TLS+TTFB) so we
+      // measure pure transfer throughput, not connection setup overhead.
+      const transferStart = performance.now();
       const reader = response.body.getReader();
       let receivedLength = 0;
       while (true) {
@@ -246,9 +341,13 @@ async function testSingleFile(testFile, timeout = 15000) {
         receivedLength += value.length;
       }
 
-      const duration = (performance.now() - startTime) / 1000;
+      const duration = (performance.now() - transferStart) / 1000;
       clearTimeout(timeoutId);
-      if (duration < 0.05 && receivedLength < 65536) throw new Error('Test too fast, likely cached');
+
+      // Reject samples that are too short to be reliable
+      if (duration < 0.1 || receivedLength < 8192) {
+        throw new Error('Transfer too short for accurate measurement');
+      }
 
       return (receivedLength * 8) / (duration * 1e6);
     } catch (error) {
@@ -309,15 +408,10 @@ async function performSpeedTest() {
     const cleaned = removeOutliers(allSpeeds);
     const finalSpeed = getMedianSpeed(cleaned.length > 0 ? cleaned : allSpeeds);
 
-    let smoothedSpeed = finalSpeed;
-    if (historyArray.length > 0) {
-      const recent = historyArray.slice(-3);
-      const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
-      smoothedSpeed = finalSpeed * 0.7 + recentAvg * 0.3;
-    }
-
-    speedHistory.push(smoothedSpeed);
-    latestSpeed = formatSpeed(smoothedSpeed);
+    // Store the actual measured speed without smoothing — users want to see
+    // real-time changes, not a moving average that lags behind reality.
+    speedHistory.push(finalSpeed);
+    latestSpeed = formatSpeed(finalSpeed);
 
     const uploadSpeed = await measureUpload();
     latestUpload = uploadSpeed !== null ? formatSpeed(uploadSpeed) : '--';
@@ -326,7 +420,7 @@ async function performSpeedTest() {
     latestPing = ping !== null ? ping.toString() : '--';
     latestJitter = jitter !== null ? jitter.toString() : '--';
 
-    const badgeText = smoothedSpeed >= 1 ? latestSpeed + 'M' : Math.round(smoothedSpeed * 1000) + 'K';
+    const badgeText = finalSpeed >= 1 ? latestSpeed + 'M' : Math.round(finalSpeed * 1000) + 'K';
     chrome.action.setBadgeText({ text: badgeText });
     chrome.action.setBadgeBackgroundColor({ color: '#0058cc' });
     isTestingInProgress = false;

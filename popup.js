@@ -94,8 +94,6 @@ function updateSpeedDisplay(speedData) {
     if (uploadSpeedElement) uploadSpeedElement.innerText = currentUpload;
     if (pingElement) pingElement.innerText = currentPing;
     if (jitterElement) jitterElement.innerText = currentJitter;
-    speedElement.style.transform = '';
-    speedElement.style.opacity = '';
   } else {
     speedElement.innerText = formatted.display;
     unitElement.innerText = formatted.unit;
@@ -125,16 +123,14 @@ function updateSpeedDisplay(speedData) {
   // Update speed history visualization
   updateSpeedGraph();
 
-  // Trigger animation only when not testing
-  if (!isTestingInProgress) {
-    const statsRow = document.getElementById('ping-container');
-    [speedContainer, uploadContainer, statsRow].forEach((el) => {
-      if (el) {
-        el.style.opacity = '1';
-        el.style.transform = 'translateY(0)';
-      }
-    });
-  }
+  // Always make containers visible once we have data (regardless of test state)
+  const statsRow = document.getElementById('ping-container');
+  [speedContainer, uploadContainer, statsRow].forEach((el) => {
+    if (el) {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+    }
+  });
 }
 
 function updateSpeedGraph() {
