@@ -1,4 +1,4 @@
-# Real-Time Internet Speed Monitor (v2.8.0)
+# Real-Time Internet Speed Monitor 
 
 An advanced Chrome extension that provides accurate real-time internet speed monitoring with intelligent adaptive testing algorithms and optimized performance.
 
