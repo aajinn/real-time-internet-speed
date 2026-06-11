@@ -65,4 +65,4 @@ An advanced Chrome extension that provides accurate real-time internet speed mon
 - Cross-browser compatibility testing
 - Performance regression testing
 
-Made with ❤️ by [Ared](https://ared.dev)
+Made with ❤️ by [Ajin Varghese Chandy](https://ared.dev)
