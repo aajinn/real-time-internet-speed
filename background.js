@@ -1,3 +1,5 @@
+importScripts('./utils.js');
+
 let latestSpeed = '--';
 let latestUpload = '--';
 let latestPing = '--';
@@ -35,38 +37,7 @@ class RequestQueue {
 
 const requestQueue = new RequestQueue(2);
 
-class CircularBuffer {
-  constructor(size) {
-    this.size = size;
-    this.buffer = new Array(size);
-    this.index = 0;
-    this.length = 0;
-  }
-
-  push(item) {
-    this.buffer[this.index] = item;
-    this.index = (this.index + 1) % this.size;
-    if (this.length < this.size) this.length++;
-  }
-
-  toArray() {
-    if (this.length === 0) return [];
-    const result = new Array(this.length);
-    for (let i = 0; i < this.length; i++) {
-      result[i] = this.buffer[(this.index - this.length + i + this.size) % this.size];
-    }
-    return result;
-  }
-
-  slice(start) {
-    return this.toArray().slice(start);
-  }
-}
-
 let speedHistory = new CircularBuffer(10);
-const MIN_STABLE_SAMPLES = 3;
-const MAX_SAMPLE_WINDOW = 8;
-const STABILITY_THRESHOLD = 0.12;
 
 const TEST_CONFIGS = {
   fast: {
@@ -100,46 +71,6 @@ const FALLBACK_TESTS = [
   { url: 'https://httpbin.org/bytes/131072', size: 131072 },
   { url: 'https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png', size: 13504 }
 ];
-
-function getMedianSpeed(speeds) {
-  if (speeds.length === 0) return 0;
-  const sorted = [...speeds].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
-}
-
-function removeOutliers(speeds) {
-  if (speeds.length < 3) return speeds;
-  const median = getMedianSpeed(speeds);
-  return speeds.filter(s => Math.abs(s - median) <= median * 0.5);
-}
-
-function calculateVariance(values) {
-  if (values.length === 0) return { variance: 0, mean: 0 };
-  const mean = values.reduce((s, v) => s + v, 0) / values.length;
-  const variance = values.reduce((acc, v) => acc + Math.pow(v - mean, 2), 0) / values.length;
-  return { variance, mean };
-}
-
-function hasStableResults(samples) {
-  if (samples.length < MIN_STABLE_SAMPLES) return false;
-  const { variance, mean } = calculateVariance(samples.slice(-MAX_SAMPLE_WINDOW));
-  if (mean === 0) return false;
-  return Math.sqrt(variance) / mean < STABILITY_THRESHOLD;
-}
-
-function determineConnectionType(lastKnownSpeed) {
-  if (lastKnownSpeed > 10) return 'fast';
-  if (lastKnownSpeed > 1) return 'medium';
-  return 'slow';
-}
-
-function formatSpeed(speedMbps) {
-  if (speedMbps >= 100) return speedMbps.toFixed(0);
-  if (speedMbps >= 10) return speedMbps.toFixed(1);
-  if (speedMbps >= 1) return speedMbps.toFixed(2);
-  return speedMbps.toFixed(3);
-}
 
 async function measurePing() {
   const samples = [];
@@ -187,12 +118,7 @@ async function measurePing() {
     ? Math.round((sorted[mid - 1] + sorted[mid]) / 2)
     : sorted[mid];
 
-  const jitter = steadySamples.length >= 2
-    ? Math.round(
-        steadySamples.slice(1).reduce((sum, v, i) => sum + Math.abs(v - steadySamples[i]), 0) /
-        (steadySamples.length - 1)
-      )
-    : 0;
+  const jitter = calculateJitter(steadySamples);
 
   return { ping: medianPing, jitter };
 }
@@ -291,7 +217,7 @@ async function measureUpload() {
         : (transferEnd > transferStart ? transferEnd - transferStart : performance.now() - transferStart) / 1000;
 
       if (response.ok && duration > 0.1) {
-        results.push((size * 8) / (duration * 1e6));
+        results.push(calculateSpeedMbps(size, duration));
       }
     } catch (e) {
       clearTimeout(timeoutId);
@@ -349,7 +275,7 @@ async function testSingleFile(testFile, timeout = 15000) {
         throw new Error('Transfer too short for accurate measurement');
       }
 
-      return (receivedLength * 8) / (duration * 1e6);
+      return calculateSpeedMbps(receivedLength, duration);
     } catch (error) {
       clearTimeout(timeoutId);
       throw error;
@@ -380,13 +306,13 @@ async function performSpeedTest() {
         config.testFiles.slice(0, 2).map(f => testSingleFile(f, config.timeout).catch(() => null))
       );
       results.forEach(r => {
-        if (r.status === 'fulfilled' && r.value > 0 && r.value < 2000) allSpeeds.push(r.value);
+        if (r.status === 'fulfilled' && isValidSpeed(r.value)) allSpeeds.push(r.value);
       });
     } else {
       for (const testFile of config.testFiles) {
         try {
           const speed = await testSingleFile(testFile, config.timeout);
-          if (speed > 0 && speed < 2000) {
+          if (isValidSpeed(speed)) {
             allSpeeds.push(speed);
             if (allSpeeds.length >= 2 && hasStableResults(allSpeeds)) break;
           }
@@ -398,7 +324,7 @@ async function performSpeedTest() {
       for (const fallback of FALLBACK_TESTS) {
         try {
           const speed = await testSingleFile(fallback, 8000);
-          if (speed > 0 && speed < 2000) { allSpeeds.push(speed); break; }
+          if (isValidSpeed(speed)) { allSpeeds.push(speed); break; }
         } catch (e) { console.warn('Fallback test failed:', fallback.url, e && e.message); continue; }
       }
     }
@@ -420,7 +346,7 @@ async function performSpeedTest() {
     latestPing = ping !== null ? ping.toString() : '--';
     latestJitter = jitter !== null ? jitter.toString() : '--';
 
-    const badgeText = finalSpeed >= 1 ? latestSpeed + 'M' : Math.round(finalSpeed * 1000) + 'K';
+    const badgeText = formatBadgeText(finalSpeed, latestSpeed);
     chrome.action.setBadgeText({ text: badgeText });
     chrome.action.setBadgeBackgroundColor({ color: '#0058cc' });
     isTestingInProgress = false;
@@ -437,24 +363,13 @@ async function performSpeedTest() {
   }
 }
 
-function getTestInterval() {
-  const historyArray = speedHistory.toArray();
-  if (historyArray.length < 2) return 3000;
-  const { variance, mean } = calculateVariance(historyArray.slice(-4));
-  const cv = mean > 0 ? Math.sqrt(variance) / mean : 1;
-  const base = mean > 50 ? 15000 : mean > 10 ? 10000 : 6000;
-  if (cv < 0.1) return base * 1.5;
-  if (cv < 0.2) return base;
-  return Math.max(base * 0.6, 3000);
-}
-
 function scheduleNextTest() {
   setTimeout(async () => {
     if (navigator.onLine && !isTestingInProgress) {
       await performSpeedTest().catch(e => console.error('Scheduled test failed:', e));
     }
     scheduleNextTest();
-  }, getTestInterval());
+  }, getTestIntervalFromHistory(speedHistory.toArray()));
 }
 
 performSpeedTest().then(() => scheduleNextTest()).catch(e => {

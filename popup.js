@@ -5,33 +5,6 @@ let currentJitter = '--';
 let speedHistory = [];
 let isTestingInProgress = false;
 
-function formatSpeedForDisplay(speedString, rawSpeed) {
-  if (speedString === '--' || speedString === 'Err') {
-    return { display: speedString, unit: 'Mbps', isError: speedString === 'Err' };
-  }
-
-  if (speedString === 'Off') {
-    return { display: 'Offline', unit: '', isError: true, isOffline: true };
-  }
-
-  const speed = parseFloat(speedString) || 0;
-
-  if (speed >= 1) {
-    return {
-      display: speed >= 10 ? speed.toFixed(1) : speed.toFixed(2),
-      unit: 'Mbps',
-      isError: false
-    };
-  } else {
-    const kbps = Math.round(speed * 1000);
-    return {
-      display: kbps.toString(),
-      unit: 'Kbps',
-      isError: false
-    };
-  }
-}
-
 function updateSpeedDisplay(speedData) {
   const speedElement = document.getElementById('speed');
   const unitElement = document.getElementById('unit');
