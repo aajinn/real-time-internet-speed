@@ -2,7 +2,7 @@
 
 An advanced Chrome extension that provides accurate real-time internet speed monitoring with intelligent adaptive testing algorithms and optimized performance.
 
-## 🚀 Key Features
+## Key Features
 
 ### Advanced Speed Calculation
 - **Adaptive Testing**: Automatically adjusts test parameters based on your connection type (fast/medium/slow)
@@ -28,7 +28,7 @@ An advanced Chrome extension that provides accurate real-time internet speed mon
 - **Background Processing**: Non-blocking speed tests that don't interfere with browsing
 - **Automated Testing**: Comprehensive test suite with CI/CD integration
 
-## 🎯 How It Works
+## How It Works
 
 1. **Initial Assessment**: Extension determines your connection type with preliminary tests
 2. **Adaptive Testing**: Selects appropriate test file sizes (100KB - 2MB) based on your speed
@@ -36,21 +36,21 @@ An advanced Chrome extension that provides accurate real-time internet speed mon
 4. **Smart Averaging**: Uses median calculation and historical smoothing for accuracy
 5. **Dynamic Scheduling**: Adjusts testing frequency based on connection stability
 
-## 🛠️ Installation
+## Installation
 
 1. Load the extension in Chrome Developer Mode
 2. The extension will automatically start monitoring your speed
 3. Click the extension icon to view detailed speed information
 4. Use "Test Now" for immediate speed measurements
 
-## 📊 Accuracy Improvements
+## Accuracy Improvements
 
 - **90% More Accurate**: Advanced algorithms provide significantly more reliable measurements
 - **Reduced Variance**: Outlier removal and smoothing eliminate erratic readings
 - **Adaptive Sizing**: Test file sizes automatically match your connection capabilities
 - **Fallback Testing**: Multiple test sources ensure consistent operation
 
-## 🎨 UI Enhancements
+## UI Enhancements
 
 - Modern gradient design with improved readability
 - Real-time status indicators
@@ -58,11 +58,11 @@ An advanced Chrome extension that provides accurate real-time internet speed mon
 - Responsive layout with smooth animations
 - Keyboard shortcuts (Press 'R' to test)
 
-## 🧪 Testing & Quality Assurance
+## Testing & Quality Assurance
 
 - Comprehensive HTML-based test suite
 - Automated CI/CD pipeline with GitHub Actions
 - Cross-browser compatibility testing
 - Performance regression testing
 
-Made with ❤️ by [Ared](https://ared.dev)
+Made with ❤️ by [Ajin Varghese Chandy](https://ared.dev)
