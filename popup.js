@@ -239,6 +239,37 @@ document.addEventListener('DOMContentLoaded', () => {
     graphContainer.appendChild(svg);
   }
 
+  // Handle overlay toggle
+  const overlayToggle = document.getElementById('overlayToggle');
+  const overlayBar = document.getElementById('overlayBar');
+
+  function syncOverlayBar(checked) {
+    if (overlayBar) overlayBar.classList.toggle('active', checked);
+  }
+
+  if (overlayToggle) {
+    chrome.storage.local.get('overlayEnabled', (result) => {
+      // Default to true if never set
+      const isEnabled = result.overlayEnabled !== false;
+      overlayToggle.checked = isEnabled;
+      syncOverlayBar(isEnabled);
+      if (result.overlayEnabled === undefined) {
+        chrome.storage.local.set({ overlayEnabled: true });
+      }
+    });
+    overlayToggle.addEventListener('change', () => {
+      const enabled = overlayToggle.checked;
+      syncOverlayBar(enabled);
+      chrome.storage.local.set({ overlayEnabled: enabled }, () => {
+        chrome.tabs.query({}, (tabs) => {
+          for (const tab of tabs) {
+            chrome.tabs.sendMessage(tab.id, { type: 'overlayToggled' }).catch(() => {});
+          }
+        });
+      });
+    });
+  }
+
   // Handle rating system
   handleRatingSystem();
 
@@ -287,28 +318,44 @@ function handlePinClick() {
 }
 
 function handleRatingSystem() {
-  const divKey = 'ratingDivLastShown';
   const stopRateUsKey = 'stopRatingDiv';
-  const currentDate = new Date().toDateString();
+  const divKey = 'ratingDivLastShown';
+  const MIN_WAIT_MS = 10 * 60 * 1000; // 10 minutes after install
 
   const mainContainer = document.getElementById('main');
   const ratingDiv = document.getElementById('ratingDiv');
 
-  // Check if the "Rate Us" prompt is permanently disabled
+  // Permanently dismissed — never show again
   if (localStorage.getItem(stopRateUsKey) === 'true') {
     if (ratingDiv) ratingDiv.style.display = 'none';
     return;
   }
 
-  if (localStorage.getItem(divKey) !== currentDate) {
+  // Already shown today — skip
+  const currentDate = new Date().toDateString();
+  if (localStorage.getItem(divKey) === currentDate) {
+    if (ratingDiv) ratingDiv.style.display = 'none';
+    return;
+  }
+
+  // Check install time from storage — only show after 10 min
+  chrome.storage.local.get('installTime', (result) => {
+    const installTime = result.installTime || 0;
+    const elapsed = Date.now() - installTime;
+
+    if (elapsed < MIN_WAIT_MS) {
+      // Not ready yet — hide rating and show main
+      if (ratingDiv) ratingDiv.style.display = 'none';
+      return;
+    }
+
+    // Ready — show rating modal
     if (mainContainer) mainContainer.style.display = 'none';
     if (ratingDiv) {
-      ratingDiv.style.display = 'block';
+      ratingDiv.style.display = 'flex';
       localStorage.setItem(divKey, currentDate);
     }
-  } else {
-    if (ratingDiv) ratingDiv.style.display = 'none';
-  }
+  });
 }
 
 // Hide "Rate Us" and show main app

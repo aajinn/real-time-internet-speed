@@ -252,51 +252,198 @@
         #ratingDiv {
             display: none;
             width: 100%;
+            min-height: 280px;
             background: linear-gradient(135deg, #63656e 0%, #9d8ead 100%);
-            padding: 24px 20px;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            color: white;
+            padding: 28px 20px 20px;
             flex-direction: column;
             align-items: center;
             text-align: center;
-            gap: 10px;
+            gap: 0;
         }
 
-        #ratingDiv h3 {
-            font-size: 13px;
-            font-weight: 600;
+        .rating-emoji {
+            font-size: 2.2rem;
+            line-height: 1;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+        }
+
+        .rating-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 6px;
+            letter-spacing: -0.2px;
+        }
+
+        .rating-sub {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.5);
+            line-height: 1.5;
+            margin-bottom: 20px;
+            max-width: 180px;
+        }
+
+        /* Star row */
+        .rating-stars {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
+        .rating-stars span {
+            font-size: 1.5rem;
+            cursor: default;
+            filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));
+            animation: starPop 0.4s cubic-bezier(.4,0,.2,1) both;
+        }
+        .rating-stars span:nth-child(1) { animation-delay: 0.05s; }
+        .rating-stars span:nth-child(2) { animation-delay: 0.10s; }
+        .rating-stars span:nth-child(3) { animation-delay: 0.15s; }
+        .rating-stars span:nth-child(4) { animation-delay: 0.20s; }
+        .rating-stars span:nth-child(5) { animation-delay: 0.25s; }
+        @keyframes starPop {
+            from { opacity: 0; transform: scale(0.5) translateY(6px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Rate Now button */
+        .rating-cta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 10px 0;
+            border-radius: 10px;
+            background: #ffd700;
+            color: #1a1a1a;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-decoration: none;
+            letter-spacing: 0.02em;
+            margin-bottom: 12px;
+            transition: background 0.2s, transform 0.15s;
+            box-shadow: 0 2px 10px rgba(255,215,0,0.3);
+        }
+        .rating-cta:hover {
+            background: #ffe033;
+            transform: translateY(-1px);
+        }
+        .rating-cta:active { transform: translateY(0); }
+
+        /* Dismiss row */
+        .rating-dismiss {
+            display: flex;
+            gap: 0;
+            width: 100%;
+        }
+        .rating-dismiss button {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.6);
+            font-size: 0.65rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 7px 0;
+            transition: background 0.15s, color 0.15s;
+        }
+        .rating-dismiss button:first-child {
+            border-radius: 8px 0 0 8px;
+            border-right: none;
+        }
+        .rating-dismiss button:last-child {
+            border-radius: 0 8px 8px 0;
+        }
+        .rating-dismiss button:hover {
+            background: rgba(255,255,255,0.15);
             color: #fff;
         }
 
-        #ratingDiv p {
-            font-size: 12px;
-            color: rgba(255,255,255,0.5);
-            line-height: 1.5;
+        /* Overlay toggle row */
+        .overlay-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            transition: background 0.2s;
         }
-
-        #ratingDiv a {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            padding: 7px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 500;
-            border: 1px solid rgba(255,255,255,0.2);
-            transition: all 0.2s;
+        .overlay-bar.active {
+            background: rgba(255, 215, 0, 0.08);
         }
-        #ratingDiv a:hover { background: rgba(255,255,255,0.2); }
-
-        #ratingDiv button {
-            background: none;
-            border: none;
-            color: rgba(255,255,255,0.55);
-            font-size: 11px;
+        .overlay-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .overlay-icon {
+            font-size: 14px;
+            line-height: 1;
+            opacity: 0.8;
+        }
+        .overlay-text {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .overlay-title {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+        }
+        .overlay-desc {
+            font-size: 0.57rem;
+            color: rgba(255,255,255,0.45);
+        }
+        /* Toggle switch */
+        .toggle-wrap {
+            position: relative;
+            width: 38px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+        .toggle-wrap input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+        .toggle-track {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.18);
+            border-radius: 11px;
             cursor: pointer;
-            padding: 2px 6px;
-            transition: color 0.2s;
+            transition: background 0.25s;
+            border: 1px solid rgba(255,255,255,0.15);
         }
-        #ratingDiv button:hover { color: rgba(255,255,255,0.9); }
+        .toggle-track::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 14px;
+            height: 14px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .toggle-wrap input:checked + .toggle-track {
+            background: #ffd700;
+            border-color: #ffd700;
+        }
+        .toggle-wrap input:checked + .toggle-track::after {
+            transform: translateX(16px);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        }
+        .toggle-wrap input:focus-visible + .toggle-track {
+            outline: 2px solid #ffd700;
+            outline-offset: 2px;
+        }
 
         /* Footer */
         #footer {
@@ -317,7 +464,7 @@
 <body>
     <div id="main">
         <div class="top-bar">
-            <span class="app-title">Speed Monitor</span>
+            <span class="app-title">Internet Speed Monitor</span>
             <button id="pin-btn" title="Pin extension to toolbar">📌 Pin</button>
         </div>
 
@@ -365,6 +512,20 @@
             <button id="testButton">Test Now</button>
         </div>
 
+        <div class="overlay-bar" id="overlayBar">
+            <div class="overlay-info">
+                <span class="overlay-icon">🪟</span>
+                <div class="overlay-text">
+                    <span class="overlay-title">Speed badge on every tab</span>
+                    <span class="overlay-desc">Float live speed in corner of pages</span>
+                </div>
+            </div>
+            <label class="toggle-wrap" title="Toggle speed overlay on pages">
+                <input type="checkbox" id="overlayToggle">
+                <span class="toggle-track"></span>
+            </label>
+        </div>
+
         <div id="footer">
             Made by <a target="_blank" href="https://ared.dev">Ared</a>
             &nbsp;·&nbsp;
@@ -375,11 +536,18 @@
     </div>
 
     <div id="ratingDiv">
-        <h3>🌟 Enjoying the extension?</h3>
-        <p>Help us improve by rating on the Chrome Web Store!</p>
-        <a href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews"
-            target="_blank" rel="noopener noreferrer">⭐ Rate Now</a>
-        <div>
+        <div class="rating-emoji">⚡</div>
+        <div class="rating-title">Enjoying fast speeds?</div>
+        <div class="rating-sub">A quick rating helps others find this extension and keeps it improving.</div>
+        <div class="rating-stars">
+            <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+        </div>
+        <a class="rating-cta"
+           href="https://chromewebstore.google.com/detail/real-time-internet-speed/baffnjfijbgpjchgdmbnpkloeccnhenl/reviews"
+           target="_blank" rel="noopener noreferrer">
+            ⭐ Rate on Chrome Web Store
+        </a>
+        <div class="rating-dismiss">
             <button id="dismiss-btn">Maybe Later</button>
             <button id="disable-rating-btn">Don't Show Again</button>
         </div>
