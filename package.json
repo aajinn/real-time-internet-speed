@@ -1,0 +1,17 @@
+{
+  "name": "internet-speed-monitor",
+  "version": "2.9.0",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "build": "node scripts/build.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "terser": "^5.48.0"
+  },
+  "jest": {
+    "transform": {},
+    "testEnvironment": "node"
+  }
+}
