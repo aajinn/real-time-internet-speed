@@ -20,17 +20,18 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
+        cache: npm
       
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build extension
+      run: npm run build
+
     - name: Create extension zip
       run: |
-        # Create zip directly from root files
-        zip -r chrome-extension-${{ github.sha }}.zip \
-          manifest.json \
-          background.js \
-          popup.html \
-          popup.js \
-          icons/ \
-          README.md
+        cd dist
+        zip -r ../chrome-extension-${{ github.sha }}.zip .
         
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
