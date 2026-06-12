@@ -42,34 +42,34 @@ let speedHistory = new CircularBuffer(10);
 const TEST_CONFIGS = {
   fast: {
     testFiles: [
-      { url: 'https://speed.cloudflare.com/__down?bytes=2097152', size: 2097152 },
-      { url: 'https://speed.cloudflare.com/__down?bytes=1048576', size: 1048576 },
+      { url: 'https://speed.cloudflare.com/__down?bytes=26214400', size: 26214400 },
+      { url: 'https://speed.cloudflare.com/__down?bytes=10485760', size: 10485760 },
     ],
-    timeout: 8000,
+    timeout: 15000,
     parallel: true
   },
   medium: {
     testFiles: [
-      { url: 'https://speed.cloudflare.com/__down?bytes=1048576', size: 1048576 },
-      { url: 'https://speed.cloudflare.com/__down?bytes=524288', size: 524288 },
+      { url: 'https://speed.cloudflare.com/__down?bytes=10485760', size: 10485760 },
+      { url: 'https://speed.cloudflare.com/__down?bytes=5242880', size: 5242880 },
     ],
-    timeout: 12000,
+    timeout: 20000,
     parallel: false
   },
   slow: {
     testFiles: [
-      { url: 'https://speed.cloudflare.com/__down?bytes=262144', size: 262144 },
-      { url: 'https://speed.cloudflare.com/__down?bytes=131072', size: 131072 },
+      { url: 'https://speed.cloudflare.com/__down?bytes=5242880', size: 5242880 },
+      { url: 'https://speed.cloudflare.com/__down?bytes=1048576', size: 1048576 },
     ],
-    timeout: 15000,
+    timeout: 30000,
     parallel: false
   }
 };
 
 const FALLBACK_TESTS = [
-  { url: 'https://speed.cloudflare.com/__down?bytes=131072', size: 131072 },
-  { url: 'https://httpbin.org/bytes/131072', size: 131072 },
-  { url: 'https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png', size: 13504 }
+  { url: 'https://speed.cloudflare.com/__down?bytes=5242880', size: 5242880 },
+  { url: 'https://httpbin.org/bytes/1048576', size: 1048576 },
+  { url: 'https://speed.cloudflare.com/__down?bytes=1048576', size: 1048576 }
 ];
 
 async function measurePing() {
@@ -270,8 +270,10 @@ async function testSingleFile(testFile, timeout = 15000) {
       const duration = (performance.now() - transferStart) / 1000;
       clearTimeout(timeoutId);
 
-      // Reject samples that are too short to be reliable
-      if (duration < 0.1 || receivedLength < 8192) {
+      // Reject unreliably fast measurements only on small files.
+      // Large files (>=10MB) that finish fast are still valid — they
+      // just mean the connection is very fast.
+      if (receivedLength < 10485760 && duration < 0.005) {
         throw new Error('Transfer too short for accurate measurement');
       }
 
@@ -294,10 +296,12 @@ async function performSpeedTest() {
   }
 
   isTestingInProgress = true;
+  // Immediately persist so the overlay shows "testing…" right away
+  await persistSpeedData();
 
   try {
     const historyArray = speedHistory.toArray();
-    const lastSpeed = historyArray.length > 0 ? historyArray[historyArray.length - 1] : 1;
+    const lastSpeed = historyArray.length > 0 ? historyArray[historyArray.length - 1] : 50;
     const config = TEST_CONFIGS[determineConnectionType(lastSpeed)];
     const allSpeeds = [];
 
@@ -338,6 +342,9 @@ async function performSpeedTest() {
     // real-time changes, not a moving average that lags behind reality.
     speedHistory.push(finalSpeed);
     latestSpeed = formatSpeed(finalSpeed);
+    // Persist download speed immediately so the overlay updates without
+    // waiting for upload + ping to finish (which can take 20+ seconds)
+    await persistSpeedData();
 
     const uploadSpeed = await measureUpload();
     latestUpload = uploadSpeed !== null ? formatSpeed(uploadSpeed) : '--';
@@ -350,6 +357,7 @@ async function performSpeedTest() {
     chrome.action.setBadgeText({ text: badgeText });
     chrome.action.setBadgeBackgroundColor({ color: '#0058cc' });
     isTestingInProgress = false;
+    await persistSpeedData();
 
   } catch (error) {
     console.error('Speed test failed:', error);
@@ -360,7 +368,23 @@ async function performSpeedTest() {
     chrome.action.setBadgeText({ text: 'Err' });
     chrome.action.setBadgeBackgroundColor({ color: '#ff4444' });
     isTestingInProgress = false;
+    await persistSpeedData();
   }
+}
+
+async function persistSpeedData() {
+  try {
+    await chrome.storage.local.set({
+      speedData: {
+        speed: latestSpeed,
+        upload: latestUpload,
+        ping: latestPing,
+        jitter: latestJitter,
+        history: speedHistory.slice(-10),
+        isTestingInProgress
+      }
+    });
+  } catch (_) {}
 }
 
 function scheduleNextTest() {
@@ -387,6 +411,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       history: speedHistory.slice(-10),
       isTestingInProgress
     });
+    return true;
   } else if (message.type === 'forceTest') {
     performSpeedTest().then(() => {
       sendResponse({ speed: latestSpeed, upload: latestUpload, ping: latestPing, jitter: latestJitter });
@@ -398,5 +423,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-chrome.runtime.onStartup.addListener(() => console.log('Extension started.'));
-chrome.runtime.onInstalled.addListener(() => console.log('Extension installed/updated.'));
+chrome.runtime.onStartup.addListener(() => {
+  console.log('Extension started.');
+  // Ensure overlayEnabled defaults to true so the overlay shows out of the box
+  chrome.storage.local.get('overlayEnabled', (result) => {
+    if (result.overlayEnabled === undefined) {
+      chrome.storage.local.set({ overlayEnabled: true });
+    }
+  });
+});
+
+chrome.runtime.onInstalled.addListener((details) => {
+  console.log('Extension installed/updated.');
+  // Default overlay to enabled for new installs and updates
+  chrome.storage.local.get('overlayEnabled', (result) => {
+    if (result.overlayEnabled === undefined) {
+      chrome.storage.local.set({ overlayEnabled: true });
+    }
+  });
+  // Record install time only on fresh install, not on updates
+  if (details.reason === 'install') {
+    chrome.storage.local.get('installTime', (result) => {
+      if (!result.installTime) {
+        chrome.storage.local.set({ installTime: Date.now() });
+      }
+    });
+  }
+});
