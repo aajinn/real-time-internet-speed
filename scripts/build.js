@@ -5,7 +5,7 @@ const { minify } = require('terser');
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.resolve(ROOT, 'dist');
 
-const JS_FILES = ['background.js', 'utils.js', 'popup.js'];
+const JS_FILES = ['background.js', 'utils.js', 'popup.js', 'content.js'];
 const ASSETS = ['manifest.json', 'popup.html', 'icons/'];
 
 async function main() {

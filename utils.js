@@ -124,7 +124,7 @@ function formatBadgeText(finalSpeed, latestSpeedStr) {
 }
 
 function isValidSpeed(speed) {
-  return speed > 0 && speed < 2000;
+  return speed > 0 && speed < 10000;
 }
 
 if (typeof module !== 'undefined' && module.exports) {

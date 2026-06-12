@@ -5,7 +5,16 @@
   "version": "2.9.0",
   "permissions": [
     "activeTab",
-    "background"
+    "background",
+    "storage",
+    "tabs"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
   ],
   "host_permissions": [
     "https://httpbin.org/*",
